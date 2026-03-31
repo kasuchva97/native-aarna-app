@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Animated } from 'react-native';
 
-const SplashScreen = ({ onComplete }) => {
+const SplashScreen = ({ navigation, onComplete }) => {
     const fadeAnim = new Animated.Value(0);
 
     useEffect(() => {
@@ -12,11 +12,11 @@ const SplashScreen = ({ onComplete }) => {
         }).start();
 
         const timer = setTimeout(() => {
-            onComplete();
-        }, 2500);
+            onComplete(navigation);
+        }, 2100);
 
         return () => clearTimeout(timer);
-    }, [onComplete]);
+    }, [onComplete, navigation]);
 
     return (
         <View style={styles.container}>
