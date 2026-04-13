@@ -29,7 +29,17 @@ const HomeScreen = ({ navigation, profile }) => {
             <Card
               key={cat.id}
               style={[styles.card, { backgroundColor: cat.color }]}
-              onPress={() => console.log('Navigate to:', cat.id)}
+              onPress={() => {
+                const routeMap = {
+                  'aarna': 'AarnaGrid',
+                  'mythology': 'MythologyGrid',
+                  'moral': 'MoralGrid',
+                  'history': 'HistoryGrid',
+                  'poems': 'PoemsGrid',
+                  'funzone': 'FunZoneGrid',
+                };
+                navigation.navigate(routeMap[cat.id]);
+              }}
             >
               <Text style={styles.icon}>{cat.icon}</Text>
               <Text style={styles.cardTitle}>{cat.title}</Text>

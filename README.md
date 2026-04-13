@@ -1,97 +1,81 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🌟 Aarna App Native
 
-# Getting Started
+![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 📖 About
+**Aarna App** is an interactive, magical educational and storytelling application built specifically for children. Migrated from a React Web application to a fully native Android and iOS experience, it brings a variety of mythological, historical, and moral stories as well as poems and fun games to your fingertips. 
 
-## Step 1: Start Metro
+It features dynamic dual-language capabilities, a complete voice-over text-to-speech option (in both English and Telugu), and personalized storytelling templates to make reading fun, engaging, and highly personalized for kids and parents!
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## ✨ Features
+* **Personalized Experience**: Collects kid's and parents' names locally to dynamically insert them into the storytelling narratives.
+* **Vibrant Categorization**: Explore extensive story categories such as Mythology, Epics (Mahabharata, Ramayana), Moral Fables, and Animal Stories.
+* **Interactive Story Viewer**: Full-screen story slider that synchronously maps illustrations with bilingual text blocks.
+* **Text-to-Speech (TTS) Narrator**: Features a built-in "Read to Me" functionality utilizing Native TTS engines to read the story in Telugu first, followed by English.
+* **Offline-Ready Profiles**: Utilizing local device storage to ensure you only set up your magic journey once.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## 🛠️ Tech Stack
+* **Core Framework**: [React Native](https://reactnative.dev/) (v0.84)
+* **Navigation**: [React Navigation](https://reactnavigation.org/) (Stack Navigator v7)
+* **Backend Cloud**: [Supabase](https://supabase.com/) (`@supabase/supabase-js`)
+* **Local Storage**: `@react-native-async-storage/async-storage` for preserving profile configurations across app executions.
+* **Sensory & Visuals**:
+  * `react-native-tts`: For native text-to-speech generation.
+  * `react-native-linear-gradient`: Providing rich, colorful Tailwind-inspired backgrounds matching the original web app.
 
-```sh
-# Using npm
-npm start
+---
 
-# OR using Yarn
-yarn start
-```
+## 🚀 Getting Started
 
-## Step 2: Build and run your app
+To get a local copy up and running, follow these simple steps.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### Prerequisites
 
-### Android
+Ensure you have your environment set up for React Native CLI development. Refer to the [official React Native docs](https://reactnative.dev/docs/set-up-your-environment) for installing dependencies (Node, JDK, Android Studio, Xcode, etc.).
 
-```sh
-# Using npm
-npm run android
+### Installation
 
-# OR using Yarn
-yarn android
-```
+1. **Clone the repo**
+   ```sh
+   git clone https://github.com/your-username/AarnaAppNative.git
+   cd AarnaAppNative
+   ```
 
-### iOS
+2. **Install NPM packages**
+   ```sh
+   npm install
+   ```
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+3. **Install CocoaPods (iOS only)**
+   ```sh
+   cd ios && pod install && cd ..
+   ```
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### Running the App
 
-```sh
-bundle install
-```
+* **Start Metro Server:**
+  ```sh
+  npm start
+  ```
 
-Then, and every time you update your native dependencies, run:
+* **Run on Android:**
+  ```sh
+  npm run android
+  ```
 
-```sh
-bundle exec pod install
-```
+* **Run on iOS:**
+  ```sh
+  npm run ios
+  ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+> **Note on Text-to-Speech**: To properly test `react-native-tts`, ensure you are using a physical device or a simulator that has Voice/Language packs installed (specifically English and Telugu packages) for the best experience.
 
-```sh
-# Using npm
-npm run ios
+## 🤝 Contributing
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
