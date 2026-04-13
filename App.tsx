@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppNavigator from './src/navigation/AppNavigator';
 
 interface Profile {
@@ -14,25 +15,33 @@ function App() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Mock loading profile (in future, use AsyncStorage)
     const loadProfile = async () => {
-      // Simulate disk read
-      setTimeout(() => {
-        setProfile({
-          kidName: 'Aarna',
-          fatherName: 'Ram',
-          motherName: 'Lahari'
-        });
+      try {
+        const savedProfile = await AsyncStorage.getItem('aarnaAppProfile');
+        if (savedProfile) {
+          setProfile(JSON.parse(savedProfile));
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
         setIsReady(true);
-      }, 500);
+      }
     };
 
     loadProfile();
   }, []);
 
-  const handleSplashComplete = (nav: any) => {
-    // Navigate to Home after splash
+  const handleProfileComplete = async (profileInfo: Profile, nav: any) => {
+    setProfile(profileInfo);
     nav.replace('Home');
+  };
+
+  const handleSplashComplete = (nav: any) => {
+    if (profile) {
+      nav.replace('Home');
+    } else {
+      nav.replace('Profile');
+    }
   };
 
   if (!isReady) return null;
@@ -43,6 +52,7 @@ function App() {
         <AppNavigator 
           profile={profile} 
           onSplashComplete={handleSplashComplete} 
+          onProfileComplete={handleProfileComplete}
         />
       </NavigationContainer>
     </SafeAreaProvider>
