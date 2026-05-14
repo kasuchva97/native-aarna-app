@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import Card from '../components/ui/Card';
 
 const HomeScreen = ({ navigation, profile }) => {
@@ -47,6 +47,13 @@ const HomeScreen = ({ navigation, profile }) => {
             </Card>
           ))}
         </View>
+
+        <TouchableOpacity 
+          style={styles.debugButton} 
+          onPress={() => navigation.navigate('Debug')}
+        >
+          <Text style={styles.debugButtonText}>🛠️ System Diagnostics</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -103,6 +110,20 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  debugButton: {
+    marginTop: 40,
+    padding: 15,
+    backgroundColor: 'rgba(126, 34, 206, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(126, 34, 206, 0.2)',
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: '#7e22ce',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

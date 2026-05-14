@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PostHogProvider } from 'posthog-react-native';
+import Config from 'react-native-config';
 import AppNavigator from './src/navigation/AppNavigator';
 
 interface Profile {
@@ -48,13 +50,24 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <AppNavigator 
-          profile={profile} 
-          onSplashComplete={handleSplashComplete} 
-          onProfileComplete={handleProfileComplete}
-        />
-      </NavigationContainer>
+      <PostHogProvider
+        apiKey={Config.POSTHOG_API_KEY ?? ''}
+        options={{
+          host: Config.POSTHOG_HOST ?? 'https://us.i.posthog.com',
+        }}
+        autocapture={{
+          captureScreens: false,
+          captureTouches: true,
+        }}
+      >
+        <NavigationContainer>
+          <AppNavigator
+            profile={profile}
+            onSplashComplete={handleSplashComplete}
+            onProfileComplete={handleProfileComplete}
+          />
+        </NavigationContainer>
+      </PostHogProvider>
     </SafeAreaProvider>
   );
 }

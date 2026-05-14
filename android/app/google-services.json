@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "160134799320",
+    "project_id": "aarna-toy",
+    "storage_bucket": "aarna-toy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160134799320:android:0fd741fde5396c9a899cad",
+        "android_client_info": {
+          "package_name": "com.aarnaappnative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFNVhddT_yBA81-Uip6YcY52xieEJpbxc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import FastImage from '@d11/react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Card from '../components/ui/Card';
 
@@ -66,7 +67,15 @@ export const MythologyGrid = ({ navigation }) => {
                 >
                   <View style={[styles.imagePlaceholder, { backgroundColor: '#f3e8ff' }]}>
                     {god.image ? (
-                       <Image source={{ uri: god.image }} style={styles.image} />
+                      <FastImage
+                        source={{
+                          uri: god.image,
+                          priority: FastImage.priority.normal,
+                          cache: FastImage.cacheControl.immutable,
+                        }}
+                        style={styles.image}
+                        resizeMode={FastImage.resizeMode.cover}
+                      />
                     ) : null}
                     <Text style={styles.cardEmoji}>{god.emoji || '✨'}</Text>
                   </View>
