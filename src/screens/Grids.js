@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from '@d11/react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Card from '../components/ui/Card';
+import { supabase } from '../lib/supabaseClient';
 
 const GridHeader = ({ title, onBack, colorClass }) => (
   <View style={styles.header}>
@@ -13,66 +15,73 @@ const GridHeader = ({ title, onBack, colorClass }) => (
   </View>
 );
 
-import { supabase } from '../lib/supabaseClient';
+const ErrorState = ({ onRetry }) => (
+  <View style={styles.centerContainer}>
+    <Text style={styles.stateEmoji}>😔</Text>
+    <Text style={styles.stateTitle}>Couldn't load content</Text>
+    <Text style={styles.stateSubtitle}>Check your connection and try again.</Text>
+    <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+      <Text style={styles.retryText}>Try Again</Text>
+    </TouchableOpacity>
+  </View>
+);
 
-export const MythologyGrid = ({ navigation }) => {
+const EmptyState = () => (
+  <View style={styles.centerContainer}>
+    <Text style={styles.stateEmoji}>🚧</Text>
+    <Text style={styles.stateTitle}>Coming Soon!</Text>
+    <Text style={styles.stateSubtitle}>New stories are being added soon.</Text>
+  </View>
+);
+
+export const MythologyGrid = ({ navigation, route }) => {
+  const { profile } = route.params || {};
   const [gods, setGods] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
 
-  React.useEffect(() => {
-    const fetchGods = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase.from('gods').select('*').order('name');
-        if (error) throw error;
-        
-        // If data is empty or fails, we inject some fallbacks to avoid a completely broken screen
-        if (data && data.length > 0) {
-          setGods(data);
-        } else {
-          setGods([
-             { id: 'krishna', name: 'Krishna (Fallback)', image: 'https://images.unsplash.com/photo-1641730259879-ad98e7db7bcb', emoji: '🦚' }
-          ]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch gods:', err);
-        setGods([
-           { id: 'krishna', name: 'Krishna (Offline)', image: 'https://images.unsplash.com/photo-1641730259879-ad98e7db7bcb', emoji: '🦚' }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGods();
-  }, []);
+  const fetchGods = async () => {
+    try {
+      setLoading(true);
+      setError(false);
+      const { data, error: supaErr } = await supabase.from('gods').select('*').order('name');
+      if (supaErr) throw supaErr;
+      setGods(data || []);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => { fetchGods(); }, []);
 
   return (
     <SafeAreaView style={styles.flex1}>
       <LinearGradient colors={['#dbeafe', '#fae8ff', '#fce7f3']} style={styles.flex1}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <GridHeader title="Choose Your God" onBack={() => navigation.goBack()} />
-          
           {loading ? (
-             <View style={styles.centerContainer}>
-               <ActivityIndicator size="large" color="#7e22ce" />
-               <Text style={styles.loadingText}>Loading Gods...</Text>
-             </View>
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color="#7e22ce" />
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          ) : error ? (
+            <ErrorState onRetry={fetchGods} />
+          ) : gods.length === 0 ? (
+            <EmptyState />
           ) : (
             <View style={styles.grid2Col}>
               {gods.map((god) => (
                 <Card
                   key={god.id}
                   style={styles.gridCard}
-                  onPress={() => navigation.navigate('StoriesList', { category: god.id })}
+                  onPress={() => navigation.navigate('StoriesList', { category: god.id, profile })}
                 >
                   <View style={[styles.imagePlaceholder, { backgroundColor: '#f3e8ff' }]}>
                     {god.image ? (
                       <FastImage
-                        source={{
-                          uri: god.image,
-                          priority: FastImage.priority.normal,
-                          cache: FastImage.cacheControl.immutable,
-                        }}
+                        source={{ uri: god.image, priority: FastImage.priority.normal, cache: FastImage.cacheControl.immutable }}
                         style={styles.image}
                         resizeMode={FastImage.resizeMode.cover}
                       />
@@ -104,10 +113,10 @@ export const AarnaGrid = ({ navigation, route }) => {
           <GridHeader title={`${childName}'s Adventures`} colorClass="#be185d" onBack={() => navigation.goBack()} />
           <View style={styles.grid1Col}>
             {categories.map((cat) => (
-              <TouchableOpacity key={cat.id} style={styles.bigCardContainer} onPress={() => navigation.navigate('StoriesList', { category: cat.id })}>
+              <TouchableOpacity key={cat.id} style={styles.bigCardContainer} onPress={() => navigation.navigate('StoriesList', { category: cat.id, profile })}>
                 <LinearGradient colors={cat.colors} style={styles.bigCard}>
-                    <Text style={styles.bigEmoji}>{cat.emoji}</Text>
-                    <Text style={[styles.bigCardText, { color: '#be185d' }]}>{cat.name}</Text>
+                  <Text style={styles.bigEmoji}>{cat.emoji}</Text>
+                  <Text style={[styles.bigCardText, { color: '#be185d' }]}>{cat.name}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ))}
@@ -118,7 +127,8 @@ export const AarnaGrid = ({ navigation, route }) => {
   );
 };
 
-export const HistoryGrid = ({ navigation }) => {
+export const HistoryGrid = ({ navigation, route }) => {
+  const { profile } = route.params || {};
   const categories = [
     { id: 'ramayana', name: 'Ramayana Stories', emoji: '🏹', colors: ['#fef3c7', '#fde68a'] },
     { id: 'mahabharata', name: 'Mahabharata Stories', emoji: '⚔️', colors: ['#fef9c3', '#fde047'] },
@@ -131,10 +141,10 @@ export const HistoryGrid = ({ navigation }) => {
           <GridHeader title="Epic History Stories" colorClass="#b45309" onBack={() => navigation.goBack()} />
           <View style={styles.grid1Col}>
             {categories.map((cat) => (
-              <TouchableOpacity key={cat.id} style={styles.bigCardContainer} onPress={() => navigation.navigate('StoriesList', { category: cat.id })}>
+              <TouchableOpacity key={cat.id} style={styles.bigCardContainer} onPress={() => navigation.navigate('StoriesList', { category: cat.id, profile })}>
                 <LinearGradient colors={cat.colors} style={styles.bigCard}>
-                    <Text style={styles.bigEmoji}>{cat.emoji}</Text>
-                    <Text style={[styles.bigCardText, { color: '#b45309' }]}>{cat.name}</Text>
+                  <Text style={styles.bigEmoji}>{cat.emoji}</Text>
+                  <Text style={[styles.bigCardText, { color: '#b45309' }]}>{cat.name}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ))}
@@ -145,7 +155,8 @@ export const HistoryGrid = ({ navigation }) => {
   );
 };
 
-export const PoemsGrid = ({ navigation }) => {
+export const PoemsGrid = ({ navigation, route }) => {
+  const { profile } = route.params || {};
   const categories = [
     { id: 'telugu-poems', name: 'Telugu Poems', emoji: '🇮🇳', colors: ['#ffedd5', '#fecaca'] },
     { id: 'english-poems', name: 'English Poems', emoji: '🎼', colors: ['#dbeafe', '#e9d5ff'] },
@@ -158,10 +169,10 @@ export const PoemsGrid = ({ navigation }) => {
           <GridHeader title="Beautiful Poems" colorClass="#7e22ce" onBack={() => navigation.goBack()} />
           <View style={styles.grid1Col}>
             {categories.map((cat) => (
-              <TouchableOpacity key={cat.id} style={styles.bigCardContainer} onPress={() => navigation.navigate('PoemsList', { category: cat.id })}>
+              <TouchableOpacity key={cat.id} style={styles.bigCardContainer} onPress={() => navigation.navigate('PoemsList', { category: cat.id, profile })}>
                 <LinearGradient colors={cat.colors} style={styles.bigCard}>
-                    <Text style={styles.bigEmoji}>{cat.emoji}</Text>
-                    <Text style={[styles.bigCardText, { color: '#7e22ce' }]}>{cat.name}</Text>
+                  <Text style={styles.bigEmoji}>{cat.emoji}</Text>
+                  <Text style={[styles.bigCardText, { color: '#7e22ce' }]}>{cat.name}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ))}
@@ -172,7 +183,8 @@ export const PoemsGrid = ({ navigation }) => {
   );
 };
 
-export const MoralGrid = ({ navigation }) => {
+export const MoralGrid = ({ navigation, route }) => {
+  const { profile } = route.params || {};
   const categories = [
     { id: 'panchatantra', name: 'Panchatantra', emoji: '🐒', colors: ['#d1fae5', '#a7f3d0'] },
     { id: 'animal-fables', name: 'Animal Fables', emoji: '🦊', colors: ['#ccfbf1', '#99f6e4'] },
@@ -188,10 +200,10 @@ export const MoralGrid = ({ navigation }) => {
           <GridHeader title="Moral Stories" colorClass="#15803d" onBack={() => navigation.goBack()} />
           <View style={styles.grid2Col}>
             {categories.map((cat) => (
-              <TouchableOpacity key={cat.id} style={[styles.bigCardContainer, { width: '48%' }]} onPress={() => navigation.navigate('StoriesList', { category: cat.id })}>
+              <TouchableOpacity key={cat.id} style={[styles.bigCardContainer, { width: '48%' }]} onPress={() => navigation.navigate('StoriesList', { category: cat.id, profile })}>
                 <LinearGradient colors={cat.colors} style={[styles.bigCard, { padding: 20 }]}>
-                    <Text style={[styles.bigEmoji, { fontSize: 40 }]}>{cat.emoji}</Text>
-                    <Text style={[styles.bigCardText, { color: '#15803d', fontSize: 18 }]}>{cat.name}</Text>
+                  <Text style={[styles.bigEmoji, { fontSize: 40 }]}>{cat.emoji}</Text>
+                  <Text style={[styles.bigCardText, { color: '#15803d', fontSize: 18 }]}>{cat.name}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ))}
@@ -239,8 +251,13 @@ export const FunZoneGrid = ({ navigation }) => {
 const styles = StyleSheet.create({
   flex1: { flex: 1 },
   scrollContainer: { padding: 20, paddingBottom: 40 },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 200 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 200, padding: 20 },
   loadingText: { marginTop: 16, fontSize: 18, color: '#7e22ce', fontWeight: 'bold' },
+  stateEmoji: { fontSize: 60, marginBottom: 16 },
+  stateTitle: { fontSize: 22, fontWeight: 'bold', color: '#374151', marginBottom: 8, textAlign: 'center' },
+  stateSubtitle: { fontSize: 16, color: '#6b7280', textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#9333ea', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24 },
+  retryText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, marginTop: 10 },
   backButton: { backgroundColor: 'white', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 2, borderColor: '#d8b4fe', marginRight: 16 },
   backText: { color: '#7e22ce', fontWeight: 'bold', fontSize: 16 },

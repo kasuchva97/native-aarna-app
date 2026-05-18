@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Animated } from 'react-native';
 
 const SplashScreen = ({ navigation, onComplete }) => {
-    const fadeAnim = new Animated.Value(0);
+    const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -25,7 +25,7 @@ const SplashScreen = ({ navigation, onComplete }) => {
                     source={require('../../assets/logo512.png')}
                     style={styles.logo}
                 />
-                <Text style={styles.title}>Storybook</Text>
+                <Text style={styles.title}>BalaKatha</Text>
             </Animated.View>
             <View style={styles.loaderContainer}>
                 <View style={styles.dot} />

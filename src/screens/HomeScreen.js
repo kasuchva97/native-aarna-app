@@ -20,8 +20,15 @@ const HomeScreen = ({ navigation, profile }) => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>My Little Storybook</Text>
+          <Text style={styles.title}>BalaKatha</Text>
           <Text style={styles.subtitle}>Choose your adventure!</Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.settingsIcon}>⚙️</Text>
+            <Text style={styles.settingsLabel}>Edit Names</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.grid}>
@@ -38,7 +45,7 @@ const HomeScreen = ({ navigation, profile }) => {
                   'poems': 'PoemsGrid',
                   'funzone': 'FunZoneGrid',
                 };
-                navigation.navigate(routeMap[cat.id]);
+                navigation.navigate(routeMap[cat.id], { profile });
               }}
             >
               <Text style={styles.icon}>{cat.icon}</Text>
@@ -48,12 +55,14 @@ const HomeScreen = ({ navigation, profile }) => {
           ))}
         </View>
 
-        <TouchableOpacity 
-          style={styles.debugButton} 
-          onPress={() => navigation.navigate('Debug')}
-        >
-          <Text style={styles.debugButtonText}>🛠️ System Diagnostics</Text>
-        </TouchableOpacity>
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.debugButton}
+            onPress={() => navigation.navigate('Debug')}
+          >
+            <Text style={styles.debugButtonText}>🛠️ System Diagnostics</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -111,6 +120,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(147, 51, 234, 0.08)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(147, 51, 234, 0.2)',
+  },
+  settingsIcon: { fontSize: 16, marginRight: 6 },
+  settingsLabel: { fontSize: 14, color: '#7e22ce', fontWeight: '600' },
   debugButton: {
     marginTop: 40,
     padding: 15,

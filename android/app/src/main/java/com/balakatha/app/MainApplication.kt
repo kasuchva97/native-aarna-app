@@ -1,4 +1,4 @@
-package com.aarnaappnative
+package com.balakatha.app
 
 import android.app.Application
 import com.facebook.react.PackageList

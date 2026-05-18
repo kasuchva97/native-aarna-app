@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Tts from 'react-native-tts';
 import { supabase } from '../lib/supabaseClient';
@@ -13,18 +14,27 @@ const StoryViewer = ({ route, navigation }) => {
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const ttsListener = useRef(null);
+  const touchStartX = useRef(0);
+
+  const cleanupTts = () => {
+    if (ttsListener.current) {
+      ttsListener.current.remove();
+      ttsListener.current = null;
+    }
+    Tts.stop();
+  };
 
   useEffect(() => {
     const fetchStory = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        const { data, error: supaErr } = await supabase
           .from('stories')
           .select('*')
           .eq('id', storyId)
           .single();
-
-        if (error) throw new Error(error.message);
+        if (supaErr) throw new Error(supaErr.message);
         setStory(data);
       } catch (err) {
         setError(err.message);
@@ -33,65 +43,68 @@ const StoryViewer = ({ route, navigation }) => {
       }
     };
     if (storyId) fetchStory();
-
-    let ttsListener = Tts.addEventListener('tts-finish', () => {
-      // In a more robust setup, we could orchestrate Telugu -> English here.
-      // But for RN TTS, queued messages handle themselves sequentially.
-    });
-
-    return () => {
-      Tts.stop();
-      if(ttsListener) { ttsListener.remove(); }
-    };
+    return () => cleanupTts();
   }, [storyId]);
 
   const handlePersonalize = (text) => personalizeText(text, profile);
 
+  const playEnglish = async (text) => {
+    try {
+      await Tts.setDefaultLanguage('en-US');
+      ttsListener.current = Tts.addEventListener('tts-finish', () => {
+        setIsPlaying(false);
+        cleanupTts();
+      });
+      Tts.speak(text);
+    } catch {
+      setIsPlaying(false);
+    }
+  };
+
   const toggleAudio = async () => {
-    if (!story || !story.slides || !story.slides[currentSlide]) return;
+    if (!story?.slides?.[currentSlide]) return;
 
     if (isPlaying) {
-      Tts.stop();
+      cleanupTts();
       setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      const slide = story.slides[currentSlide];
-      
-      const teluguText = handlePersonalize(slide.telugu);
-      const englishText = handlePersonalize(slide.english);
+      return;
+    }
 
-      Tts.stop(); // Clear any ongoing speech
+    setIsPlaying(true);
+    cleanupTts();
 
-      // Best effort dual-language TTS
-      try {
-         await Tts.setDefaultLanguage('te-IN');
-         Tts.speak(teluguText);
-      } catch (e) {
-         console.log('Telugu TTS not supported', e);
-      }
-      
-      try {
-         await Tts.setDefaultLanguage('en-US');
-         Tts.speak(englishText);
-      } catch (e) {
-         console.log('English TTS Error', e);
-      }
+    const slide = story.slides[currentSlide];
+    const teluguText = handlePersonalize(slide.telugu);
+    const englishText = handlePersonalize(slide.english);
+
+    try {
+      await Tts.setDefaultLanguage('te-IN');
+      ttsListener.current = Tts.addEventListener('tts-finish', () => {
+        if (ttsListener.current) {
+          ttsListener.current.remove();
+          ttsListener.current = null;
+        }
+        playEnglish(englishText);
+      });
+      Tts.speak(teluguText);
+    } catch {
+      playEnglish(englishText);
     }
   };
 
   const nextSlide = () => {
     if (story && currentSlide < story.slides.length - 1) {
-      setCurrentSlide(prev => prev + 1);
-      Tts.stop();
+      cleanupTts();
       setIsPlaying(false);
+      setCurrentSlide(prev => prev + 1);
     }
   };
 
   const prevSlide = () => {
     if (currentSlide > 0) {
-      setCurrentSlide(prev => prev - 1);
-      Tts.stop();
+      cleanupTts();
       setIsPlaying(false);
+      setCurrentSlide(prev => prev - 1);
     }
   };
 
@@ -107,14 +120,14 @@ const StoryViewer = ({ route, navigation }) => {
     );
   }
 
-  if (error || !story || !story.slides) {
+  if (error || !story?.slides) {
     return (
       <SafeAreaView style={styles.flex1}>
         <LinearGradient colors={['#fee2e2', '#fce7f3']} style={styles.centerContainer}>
           <Text style={styles.errorEmoji}>😔</Text>
           <Text style={styles.errorTitle}>Story Not Found</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.goBackButton}>
-             <Text style={styles.goBackText}>Go Back</Text>
+            <Text style={styles.goBackText}>Go Back</Text>
           </TouchableOpacity>
         </LinearGradient>
       </SafeAreaView>
@@ -134,12 +147,22 @@ const StoryViewer = ({ route, navigation }) => {
           <Text style={styles.slideCounter}>{currentSlide + 1} / {story.slides.length}</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          onTouchStart={(e) => { touchStartX.current = e.nativeEvent.pageX; }}
+          onTouchEnd={(e) => {
+            const dx = e.nativeEvent.pageX - touchStartX.current;
+            if (dx < -50) nextSlide();
+            else if (dx > 50) prevSlide();
+          }}
+        >
           <View style={styles.card}>
             {currentSlideData.image ? (
-               <Image source={{ uri: currentSlideData.image }} style={styles.image} />
+              <Image source={{ uri: currentSlideData.image }} style={styles.image} />
             ) : (
-               <View style={styles.imagePlaceholder}><Text style={styles.imagePlaceholderText}>📖</Text></View>
+              <View style={styles.imagePlaceholder}>
+                <Text style={styles.imagePlaceholderText}>📖</Text>
+              </View>
             )}
 
             <View style={styles.teluguSection}>
@@ -153,19 +176,19 @@ const StoryViewer = ({ route, navigation }) => {
             </View>
 
             <View style={styles.audioControls}>
-               <Button 
-                  onPress={toggleAudio} 
-                  colors={isPlaying ? ['#dc2626', '#b91c1c'] : ['#16a34a', '#15803d']}
-               >
-                 {isPlaying ? 'Stop Story' : 'Play Story'}
-               </Button>
+              <Button
+                onPress={toggleAudio}
+                colors={isPlaying ? ['#dc2626', '#b91c1c'] : ['#16a34a', '#15803d']}
+              >
+                {isPlaying ? '⏹ Stop Story' : '▶ Play Story'}
+              </Button>
             </View>
 
             <View style={styles.navControls}>
               <TouchableOpacity onPress={prevSlide} disabled={currentSlide === 0} style={[styles.navButton, currentSlide === 0 && styles.navButtonDisabled]}>
-                 <Text style={styles.navButtonText}>Previous</Text>
+                <Text style={styles.navButtonText}>← Prev</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.dots}>
                 {story.slides.map((_, i) => (
                   <View key={i} style={[styles.dot, i === currentSlide && styles.dotActive]} />
@@ -173,9 +196,11 @@ const StoryViewer = ({ route, navigation }) => {
               </View>
 
               <TouchableOpacity onPress={nextSlide} disabled={currentSlide === story.slides.length - 1} style={[styles.navButton, currentSlide === story.slides.length - 1 && styles.navButtonDisabled]}>
-                 <Text style={styles.navButtonText}>Next</Text>
+                <Text style={styles.navButtonText}>Next →</Text>
               </TouchableOpacity>
             </View>
+
+            <Text style={styles.swipeHint}>Swipe left or right to navigate slides</Text>
           </View>
         </ScrollView>
       </LinearGradient>
@@ -204,7 +229,7 @@ const styles = StyleSheet.create({
   imagePlaceholderText: { fontSize: 60 },
   teluguSection: { backgroundColor: '#fff7ed', padding: 16, borderRadius: 12, borderLeftWidth: 4, borderLeftColor: '#fb923c', marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#9a3412', marginBottom: 8 },
-  teluguText: { fontSize: 18, color: '#9a3412', lineHeight: 28 },
+  teluguText: { fontSize: 18, color: '#9a3412', lineHeight: 32 },
   englishSection: { backgroundColor: '#eff6ff', padding: 16, borderRadius: 12, borderLeftWidth: 4, borderLeftColor: '#60a5fa', marginBottom: 20 },
   sectionTitleBlue: { fontSize: 18, fontWeight: 'bold', color: '#1e40af', marginBottom: 8 },
   englishText: { fontSize: 18, color: '#1e40af', lineHeight: 28 },
@@ -216,6 +241,7 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', alignItems: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#d1d5db', marginHorizontal: 4 },
   dotActive: { backgroundColor: '#9333ea', transform: [{ scale: 1.2 }] },
+  swipeHint: { textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 16 },
 });
 
 export default StoryViewer;

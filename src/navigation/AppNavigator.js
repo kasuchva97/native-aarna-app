@@ -3,18 +3,19 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { usePostHog } from 'posthog-react-native';
 import SplashScreen from '../screens/SplashScreen';
 import HomeScreen from '../screens/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import { MythologyGrid, AarnaGrid, HistoryGrid, PoemsGrid, MoralGrid, FunZoneGrid } from '../screens/Grids';
 import StoriesList from '../screens/StoriesList';
 import StoryViewer from '../screens/StoryViewer';
 import PoemsList from '../screens/PoemsList';
 import PoemViewer from '../screens/PoemViewer';
 import GameViewer from '../screens/GameViewer';
+import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
 
 const Stack = createStackNavigator();
 
-const AppNavigator = ({ profile, onSplashComplete, onProfileComplete }) => {
+const AppNavigator = ({ profile, onSplashComplete, onProfileComplete, onProfileUpdate }) => {
   const posthog = usePostHog();
 
   const screenListeners = {
@@ -32,7 +33,9 @@ const AppNavigator = ({ profile, onSplashComplete, onProfileComplete }) => {
       <Stack.Screen name="Splash">
         {(props) => <SplashScreen {...props} onComplete={onSplashComplete} />}
       </Stack.Screen>
-      <Stack.Screen name="Profile" initialParams={{ onComplete: onProfileComplete }} component={ProfileScreen} />
+      <Stack.Screen name="Onboarding">
+        {(props) => <OnboardingScreen {...props} onComplete={onProfileComplete} />}
+      </Stack.Screen>
       <Stack.Screen name="Home">
         {(props) => <HomeScreen {...props} profile={profile} />}
       </Stack.Screen>
@@ -47,7 +50,10 @@ const AppNavigator = ({ profile, onSplashComplete, onProfileComplete }) => {
       <Stack.Screen name="PoemsList" component={PoemsList} />
       <Stack.Screen name="PoemViewer" component={PoemViewer} />
       <Stack.Screen name="GameViewer" component={GameViewer} />
-      <Stack.Screen name="Debug" component={DebugScreen} />
+      <Stack.Screen name="Settings">
+        {(props) => <SettingsScreen {...props} profile={profile} onProfileUpdate={onProfileUpdate} />}
+      </Stack.Screen>
+      {__DEV__ && <Stack.Screen name="Debug" component={DebugScreen} />}
     </Stack.Navigator>
   );
 };

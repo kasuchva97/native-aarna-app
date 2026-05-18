@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:160134799320:android:0fd741fde5396c9a899cad",
+        "mobilesdk_app_id": "1:160134799320:android:7dfd59e92de2bb69899cad",
         "android_client_info": {
-          "package_name": "com.aarnaappnative"
+          "package_name": "com.balakatha.app"
         }
       },
       "oauth_client": [],

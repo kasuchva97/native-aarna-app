@@ -1,61 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { supabase } from '../lib/supabaseClient';
 import { personalizeText } from '../utils/text';
 import Card from '../components/ui/Card';
 
+const categoryNames = {
+  'aarna-adventures': "Aarna's Adventures",
+  'krishna': 'Krishna Stories',
+  'hanuman': 'Hanuman Stories',
+  'ganesha': 'Ganesha Stories',
+  'rama': 'Rama Stories',
+  'shiva': 'Shiva Stories',
+  'durga': 'Durga Stories',
+  'lakshmi': 'Lakshmi Stories',
+  'saraswati': 'Saraswati Stories',
+  'panchatantra': 'Panchatantra Tales',
+  'animal-fables': 'Animal Fables',
+  'classic-moral': 'Moral Stories',
+  'friendship-stories': 'Friendship Stories',
+  'kindness-stories': 'Kindness Stories',
+  'ramayana': 'Ramayana Stories',
+  'mahabharata': 'Mahabharata Stories',
+  'telugu-poems': 'Telugu Poems',
+  'english-poems': 'English Poems',
+};
+
 const StoriesList = ({ route, navigation }) => {
   const { category, profile } = route.params || {};
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const fetchStories = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('stories')
-          .select('*')
-          .eq('category', category)
-          .order('created_at', { ascending: false });
-
-        if (error) throw new Error(error.message);
-        setStories(data || []);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-        setStories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (category) fetchStories();
+  const fetchStories = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(false);
+      const { data, error: supaErr } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('category', category)
+        .order('created_at', { ascending: false });
+      if (supaErr) throw supaErr;
+      setStories(data || []);
+    } catch {
+      setError(true);
+      setStories([]);
+    } finally {
+      setLoading(false);
+    }
   }, [category]);
 
-  const categoryNames = {
-      'aarna-adventures': personalizeText("Aarna's Adventures", profile),
-      'krishna': 'Krishna Stories',
-      'hanuman': 'Hanuman Stories',
-      'ganesha': 'Ganesha Stories',
-      'rama': 'Rama Stories',
-      'shiva': 'Shiva Stories',
-      'durga': 'Durga Stories',
-      'lakshmi': 'Lakshmi Stories',
-      'saraswati': 'Saraswati Stories',
-      'panchatantra': 'Panchatantra Tales',
-      'animal-fables': 'Animal Fables',
-      'classic-moral': 'Moral Stories',
-      'friendship-stories': 'Friendship Stories',
-      'kindness-stories': 'Kindness Stories',
-      'ramayana': 'Ramayana Stories',
-      'mahabharata': 'Mahabharata Stories'
-  };
+  useEffect(() => {
+    if (category) fetchStories();
+  }, [fetchStories]);
+
+  const screenTitle = category === 'aarna-adventures' && profile?.kidName
+    ? `${profile.kidName}'s Adventures`
+    : categoryNames[category] || category;
 
   const renderItem = ({ item }) => (
-    <Card 
-      style={styles.card} 
+    <Card
+      style={styles.card}
       onPress={() => navigation.navigate('StoryViewer', { storyId: item.id, profile })}
     >
       <View style={styles.cardContent}>
@@ -63,7 +70,9 @@ const StoriesList = ({ route, navigation }) => {
         <View style={styles.cardTextContainer}>
           <Text style={styles.cardTitle}>{personalizeText(item.title, profile)}</Text>
           <Text style={styles.cardDesc}>{personalizeText(item.description, profile)}</Text>
-          <Text style={styles.cardMeta}>{item.slides ? `${item.slides.length} slides` : '8 slides'}</Text>
+          <Text style={styles.cardMeta}>
+            {item.slides?.length ? `${item.slides.length} slides` : 'Read now'}
+          </Text>
         </View>
       </View>
     </Card>
@@ -76,9 +85,7 @@ const StoriesList = ({ route, navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title} numberOfLines={1}>
-            {categoryNames[category] || category}
-          </Text>
+          <Text style={styles.title} numberOfLines={1}>{screenTitle}</Text>
         </View>
 
         {loading ? (
@@ -88,15 +95,18 @@ const StoriesList = ({ route, navigation }) => {
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
-            <Text style={styles.errorEmoji}>😔</Text>
-            <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.stateEmoji}>😔</Text>
+            <Text style={styles.stateTitle}>Couldn't load stories</Text>
+            <Text style={styles.stateSubtitle}>Check your connection and try again.</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchStories}>
+              <Text style={styles.retryText}>Try Again</Text>
+            </TouchableOpacity>
           </View>
         ) : stories.length === 0 ? (
           <View style={styles.centerContainer}>
-            <Text style={styles.errorEmoji}>🚧</Text>
-            <Text style={styles.errorTitle}>Coming Soon!</Text>
-            <Text style={styles.errorText}>New stories are being added soon.</Text>
+            <Text style={styles.stateEmoji}>🚧</Text>
+            <Text style={styles.stateTitle}>Coming Soon!</Text>
+            <Text style={styles.stateSubtitle}>New stories are being added soon.</Text>
           </View>
         ) : (
           <FlatList
@@ -120,9 +130,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#7e22ce', flex: 1 },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   loadingText: { marginTop: 16, fontSize: 18, color: '#7e22ce', fontWeight: 'bold' },
-  errorEmoji: { fontSize: 60, marginBottom: 16 },
-  errorTitle: { fontSize: 24, fontWeight: 'bold', color: '#b91c1c', marginBottom: 8, textAlign: 'center' },
-  errorText: { fontSize: 16, color: '#b91c1c', textAlign: 'center' },
+  stateEmoji: { fontSize: 60, marginBottom: 16 },
+  stateTitle: { fontSize: 22, fontWeight: 'bold', color: '#374151', marginBottom: 8, textAlign: 'center' },
+  stateSubtitle: { fontSize: 16, color: '#6b7280', textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#9333ea', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24 },
+  retryText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
   listContent: { padding: 20, paddingTop: 0 },
   card: { padding: 20, marginBottom: 16, backgroundColor: 'white', borderRadius: 16, borderWidth: 2, borderColor: '#e9d5ff' },
   cardContent: { flexDirection: 'row', alignItems: 'center' },
@@ -130,7 +142,7 @@ const styles = StyleSheet.create({
   cardTextContainer: { flex: 1 },
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#7e22ce', marginBottom: 4 },
   cardDesc: { fontSize: 14, color: '#9333ea', marginBottom: 8 },
-  cardMeta: { fontSize: 12, color: '#a855f7' }
+  cardMeta: { fontSize: 12, color: '#a855f7' },
 });
 
 export default StoriesList;

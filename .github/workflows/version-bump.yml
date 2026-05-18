@@ -1,0 +1,37 @@
+name: Auto Version Bump
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read versionName from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Update versionCode and versionName in build.gradle
+        run: |
+          VERSION_CODE=${{ github.run_number }}
+          VERSION_NAME=${{ steps.pkg.outputs.version }}
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
+          echo "versionCode → $VERSION_CODE"
+          echo "versionName → $VERSION_NAME"
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add android/app/build.gradle
+          git diff --cached --quiet && echo "No changes" || git commit -m "ci: bump versionCode to ${{ github.run_number }} [skip ci]"
+          git push
