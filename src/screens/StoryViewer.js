@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Tts from 'react-native-tts';
-import { supabase } from '../lib/supabaseClient';
 import { personalizeText } from '../utils/text';
 import { Button } from '../components/ui/Button';
+import { useStory } from '../hooks/useStory';
 
 const StoryViewer = ({ route, navigation }) => {
   const { storyId, profile } = route.params || {};
-  const [story, setStory] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { story, loading, error } = useStory(storyId);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const ttsListener = useRef(null);
@@ -25,26 +23,7 @@ const StoryViewer = ({ route, navigation }) => {
     Tts.stop();
   };
 
-  useEffect(() => {
-    const fetchStory = async () => {
-      try {
-        setLoading(true);
-        const { data, error: supaErr } = await supabase
-          .from('stories')
-          .select('*')
-          .eq('id', storyId)
-          .single();
-        if (supaErr) throw new Error(supaErr.message);
-        setStory(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (storyId) fetchStory();
-    return () => cleanupTts();
-  }, [storyId]);
+  useEffect(() => () => cleanupTts(), []);
 
   const handlePersonalize = (text) => personalizeText(text, profile);
 

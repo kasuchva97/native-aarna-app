@@ -1,6 +1,6 @@
 {
   "name": "BalaKatha",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -18,12 +18,14 @@
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/stack": "^7.8.9",
     "@supabase/supabase-js": "^2.100.1",
+    "@testing-library/react-native": "^13.3.3",
     "axios": "^1.14.0",
     "posthog-react-native": "^4.43.5",
     "react": "19.2.3",
     "react-native": "0.84.1",
     "react-native-config": "^1.6.1",
     "react-native-device-info": "^15.0.2",
+    "react-native-encrypted-storage": "^4.0.3",
     "react-native-gesture-handler": "^2.30.1",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-localize": "^3.7.0",
@@ -31,7 +33,8 @@
     "react-native-screens": "^4.24.0",
     "react-native-svg": "^15.15.4",
     "react-native-tts": "^4.1.1",
-    "react-native-url-polyfill": "^3.0.0"
+    "react-native-url-polyfill": "^3.0.0",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

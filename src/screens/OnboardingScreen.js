@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useProfileStore } from '../store/profileStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -174,6 +174,7 @@ const GenderOption = ({ emoji, label, selected, onSelect }) => {
 // ─── Main screen ───────────────────────────────────────────────────────────────
 const OnboardingScreen = ({ navigation, route }) => {
   const { onComplete } = route.params || {};
+  const { setProfile } = useProfileStore();
 
   const [step, setStep] = useState(0);
   const [language, setLanguage] = useState('en');
@@ -264,8 +265,8 @@ const OnboardingScreen = ({ navigation, route }) => {
         purpose,
         gender,
       };
-      await AsyncStorage.setItem('balakatha.profile', JSON.stringify(profile));
-      if (onComplete) onComplete(profile, navigation);
+      await setProfile(profile);
+      if (onComplete) onComplete(navigation);
     } catch {
       setError('Could not save. Please try again.');
       setSaving(false);

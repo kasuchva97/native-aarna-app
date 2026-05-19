@@ -1,59 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import { runSecurityCheck } from './src/utils/security';
+import BlockedScreen from './src/screens/BlockedScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PostHogProvider } from 'posthog-react-native';
 import Config from 'react-native-config';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
-
-interface Profile {
-  kidName: string;
-  fatherName: string;
-  motherName: string;
-  language?: string;
-  purpose?: string;
-  gender?: string;
-}
+import { useProfileStore } from './src/store/profileStore';
+import { SecurityReason } from './src/types';
 
 function App() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { profile, loadProfile } = useProfileStore();
   const [isReady, setIsReady] = useState(false);
+  const [securityBlock, setSecurityBlock] = useState<SecurityReason | null>(null);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const init = async () => {
       try {
-        const savedProfile = await AsyncStorage.getItem('balakatha.profile');
-        if (savedProfile) {
-          setProfile(JSON.parse(savedProfile));
+        const [securityResult] = await Promise.all([
+          runSecurityCheck(),
+          loadProfile(),
+        ]);
+
+        if (!securityResult.secure) {
+          setSecurityBlock(securityResult.reason);
+          return;
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error('Init error:', error);
       } finally {
         setIsReady(true);
       }
     };
 
-    loadProfile();
+    init();
   }, []);
 
-  const handleProfileComplete = async (profileInfo: Profile, nav: any) => {
-    setProfile(profileInfo);
+  const handleProfileComplete = (nav: any) => {
     nav.replace('Home');
   };
 
-  const handleProfileUpdate = (updatedProfile: Profile) => {
-    setProfile(updatedProfile);
+  const handleSplashComplete = (nav: any) => {
+    nav.replace(profile ? 'Home' : 'Onboarding');
   };
 
-  const handleSplashComplete = (nav: any) => {
-    if (profile) {
-      nav.replace('Home');
-    } else {
-      nav.replace('Onboarding');
-    }
-  };
+  if (securityBlock) {
+    return <BlockedScreen reason={securityBlock} />;
+  }
 
   if (!isReady) {
     return (
@@ -81,7 +76,6 @@ function App() {
               profile={profile}
               onSplashComplete={handleSplashComplete}
               onProfileComplete={handleProfileComplete}
-              onProfileUpdate={handleProfileUpdate}
             />
           </NavigationContainer>
         </PostHogProvider>

@@ -1,0 +1,81 @@
+export const ROUTES = {
+  SPLASH: 'Splash',
+  ONBOARDING: 'Onboarding',
+  HOME: 'Home',
+  SETTINGS: 'Settings',
+  MYTHOLOGY_GRID: 'MythologyGrid',
+  AARNA_GRID: 'AarnaGrid',
+  HISTORY_GRID: 'HistoryGrid',
+  POEMS_GRID: 'PoemsGrid',
+  MORAL_GRID: 'MoralGrid',
+  FUN_ZONE_GRID: 'FunZoneGrid',
+  STORIES_LIST: 'StoriesList',
+  STORY_VIEWER: 'StoryViewer',
+  POEMS_LIST: 'PoemsList',
+  POEM_VIEWER: 'PoemViewer',
+  GAME_VIEWER: 'GameViewer',
+  DEBUG: 'Debug',
+} as const;
+
+export const STORAGE_KEYS = {
+  PROFILE: 'balakatha.profile',
+} as const;
+
+export const CATEGORY_NAMES: Record<string, string> = {
+  'aarna-adventures': "Child's Adventures",
+  'krishna': 'Krishna Stories',
+  'hanuman': 'Hanuman Stories',
+  'ganesha': 'Ganesha Stories',
+  'rama': 'Rama Stories',
+  'shiva': 'Shiva Stories',
+  'durga': 'Durga Stories',
+  'lakshmi': 'Lakshmi Stories',
+  'saraswati': 'Saraswati Stories',
+  'panchatantra': 'Panchatantra Tales',
+  'animal-fables': 'Animal Fables',
+  'classic-moral': 'Moral Stories',
+  'friendship-stories': 'Friendship Stories',
+  'kindness-stories': 'Kindness Stories',
+  'ramayana': 'Ramayana Stories',
+  'mahabharata': 'Mahabharata Stories',
+  'telugu-poems': 'Telugu Poems',
+  'english-poems': 'English Poems',
+};
+
+export const THEME = {
+  colors: {
+    primary: '#7e22ce',
+    primaryLight: '#9333ea',
+    primaryLighter: '#a855f7',
+    background: '#fffdf9',
+    surface: '#ffffff',
+    error: '#dc2626',
+    success: '#16a34a',
+    text: '#1f2937',
+    textSecondary: '#6b7280',
+    border: '#e9d5ff',
+  },
+  fontSizes: {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 20,
+    xl: 24,
+    xxl: 28,
+    xxxl: 32,
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 20,
+    xxl: 24,
+  },
+} as const;

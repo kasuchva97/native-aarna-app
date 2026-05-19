@@ -5,11 +5,12 @@ import {
   TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
+import { useProfileStore } from '../store/profileStore';
 import { Button } from '../components/ui/Button';
 
-const SettingsScreen = ({ navigation, profile, onProfileUpdate }) => {
+const SettingsScreen = ({ navigation }) => {
+  const { profile, updateProfile } = useProfileStore();
   const [kidName, setKidName] = useState(profile?.kidName || '');
   const [fatherName, setFatherName] = useState(profile?.fatherName || '');
   const [motherName, setMotherName] = useState(profile?.motherName || '');
@@ -36,13 +37,11 @@ const SettingsScreen = ({ navigation, profile, onProfileUpdate }) => {
     setError('');
     setSaving(true);
     try {
-      const updated = {
+      await updateProfile({
         kidName: kidName.trim(),
         fatherName: fatherName.trim(),
         motherName: motherName.trim(),
-      };
-      await AsyncStorage.setItem('balakatha.profile', JSON.stringify(updated));
-      onProfileUpdate(updated);
+      });
       setSaved(true);
       setTimeout(() => navigation.goBack(), 800);
     } catch {

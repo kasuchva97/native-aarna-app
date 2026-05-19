@@ -15,7 +15,7 @@ import DebugScreen from '../screens/DebugScreen';
 
 const Stack = createStackNavigator();
 
-const AppNavigator = ({ profile, onSplashComplete, onProfileComplete, onProfileUpdate }) => {
+const AppNavigator = ({ profile, onSplashComplete, onProfileComplete }) => {
   const posthog = usePostHog();
 
   const screenListeners = {
@@ -50,9 +50,7 @@ const AppNavigator = ({ profile, onSplashComplete, onProfileComplete, onProfileU
       <Stack.Screen name="PoemsList" component={PoemsList} />
       <Stack.Screen name="PoemViewer" component={PoemViewer} />
       <Stack.Screen name="GameViewer" component={GameViewer} />
-      <Stack.Screen name="Settings">
-        {(props) => <SettingsScreen {...props} profile={profile} onProfileUpdate={onProfileUpdate} />}
-      </Stack.Screen>
+      <Stack.Screen name="Settings" component={SettingsScreen} />
       {__DEV__ && <Stack.Screen name="Debug" component={DebugScreen} />}
     </Stack.Navigator>
   );

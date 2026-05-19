@@ -1,64 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import { supabase } from '../lib/supabaseClient';
 import { personalizeText } from '../utils/text';
 import Card from '../components/ui/Card';
-
-const categoryNames = {
-  'aarna-adventures': "Aarna's Adventures",
-  'krishna': 'Krishna Stories',
-  'hanuman': 'Hanuman Stories',
-  'ganesha': 'Ganesha Stories',
-  'rama': 'Rama Stories',
-  'shiva': 'Shiva Stories',
-  'durga': 'Durga Stories',
-  'lakshmi': 'Lakshmi Stories',
-  'saraswati': 'Saraswati Stories',
-  'panchatantra': 'Panchatantra Tales',
-  'animal-fables': 'Animal Fables',
-  'classic-moral': 'Moral Stories',
-  'friendship-stories': 'Friendship Stories',
-  'kindness-stories': 'Kindness Stories',
-  'ramayana': 'Ramayana Stories',
-  'mahabharata': 'Mahabharata Stories',
-  'telugu-poems': 'Telugu Poems',
-  'english-poems': 'English Poems',
-};
+import { useStories } from '../hooks/useStories';
+import { CATEGORY_NAMES } from '../constants';
 
 const StoriesList = ({ route, navigation }) => {
   const { category, profile } = route.params || {};
-  const [stories, setStories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const fetchStories = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(false);
-      const { data, error: supaErr } = await supabase
-        .from('stories')
-        .select('*')
-        .eq('category', category)
-        .order('created_at', { ascending: false });
-      if (supaErr) throw supaErr;
-      setStories(data || []);
-    } catch {
-      setError(true);
-      setStories([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [category]);
-
-  useEffect(() => {
-    if (category) fetchStories();
-  }, [fetchStories]);
+  const { stories, loading, error, refetch } = useStories(category);
 
   const screenTitle = category === 'aarna-adventures' && profile?.kidName
     ? `${profile.kidName}'s Adventures`
-    : categoryNames[category] || category;
+    : CATEGORY_NAMES[category] || category;
 
   const renderItem = ({ item }) => (
     <Card
@@ -98,7 +53,7 @@ const StoriesList = ({ route, navigation }) => {
             <Text style={styles.stateEmoji}>😔</Text>
             <Text style={styles.stateTitle}>Couldn't load stories</Text>
             <Text style={styles.stateSubtitle}>Check your connection and try again.</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchStories}>
+            <TouchableOpacity style={styles.retryButton} onPress={refetch}>
               <Text style={styles.retryText}>Try Again</Text>
             </TouchableOpacity>
           </View>

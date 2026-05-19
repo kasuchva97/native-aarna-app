@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from '@d11/react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Card from '../components/ui/Card';
-import { supabase } from '../lib/supabaseClient';
+import { useGods } from '../hooks/useGods';
 
 const GridHeader = ({ title, onBack, colorClass }) => (
   <View style={styles.header}>
@@ -36,25 +36,7 @@ const EmptyState = () => (
 
 export const MythologyGrid = ({ navigation, route }) => {
   const { profile } = route.params || {};
-  const [gods, setGods] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(false);
-
-  const fetchGods = async () => {
-    try {
-      setLoading(true);
-      setError(false);
-      const { data, error: supaErr } = await supabase.from('gods').select('*').order('name');
-      if (supaErr) throw supaErr;
-      setGods(data || []);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => { fetchGods(); }, []);
+  const { gods, loading, error, refetch } = useGods();
 
   return (
     <SafeAreaView style={styles.flex1}>
@@ -67,7 +49,7 @@ export const MythologyGrid = ({ navigation, route }) => {
               <Text style={styles.loadingText}>Loading...</Text>
             </View>
           ) : error ? (
-            <ErrorState onRetry={fetchGods} />
+            <ErrorState onRetry={refetch} />
           ) : gods.length === 0 ? (
             <EmptyState />
           ) : (
