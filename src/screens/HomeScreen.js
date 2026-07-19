@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 import Card from '../components/ui/Card';
+import { useProfileStore } from '../store/profileStore';
 
 const HomeScreen = ({ navigation, profile }) => {
   const childName = profile?.kidName || 'Aarna';
   const fatherName = profile?.fatherName || 'Ram';
   const motherName = profile?.motherName || 'Lahari';
+  const { theme } = useProfileStore();
+  const isDark = theme === 'dark';
 
   const categories = [
     { id: 'aarna', title: `${childName}'s Adventures`, icon: '🌟', color: '#fdf2f2', description: `Amazing adventures with ${childName}, ${fatherName}, and ${motherName}!` },
@@ -17,17 +20,17 @@ const HomeScreen = ({ navigation, profile }) => {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDark && styles.darkContainer]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>BalaKatha</Text>
-          <Text style={styles.subtitle}>Choose your adventure!</Text>
+          <Text style={[styles.title, isDark && styles.darkTitle]}>BalaKatha</Text>
+          <Text style={[styles.subtitle, isDark && styles.darkSubtitle]}>Choose your adventure!</Text>
           <TouchableOpacity
-            style={styles.settingsButton}
+            style={[styles.settingsButton, isDark && styles.darkSettingsButton]}
             onPress={() => navigation.navigate('Settings')}
           >
             <Text style={styles.settingsIcon}>⚙️</Text>
-            <Text style={styles.settingsLabel}>Edit Names</Text>
+            <Text style={[styles.settingsLabel, isDark && styles.darkSettingsLabel]}>Edit Names</Text>
           </TouchableOpacity>
         </View>
 
@@ -35,7 +38,11 @@ const HomeScreen = ({ navigation, profile }) => {
           {categories.map((cat) => (
             <Card
               key={cat.id}
-              style={[styles.card, { backgroundColor: cat.color }]}
+              style={[
+                styles.card,
+                { backgroundColor: isDark ? '#1c1133' : cat.color },
+                isDark && { borderColor: 'rgba(147, 51, 234, 0.2)' }
+              ]}
               onPress={() => {
                 const routeMap = {
                   'aarna': 'AarnaGrid',
@@ -49,18 +56,18 @@ const HomeScreen = ({ navigation, profile }) => {
               }}
             >
               <Text style={styles.icon}>{cat.icon}</Text>
-              <Text style={styles.cardTitle}>{cat.title}</Text>
-              <Text style={styles.cardDescription}>{cat.description}</Text>
+              <Text style={[styles.cardTitle, isDark && styles.darkText]}>{cat.title}</Text>
+              <Text style={[styles.cardDescription, isDark && styles.darkTextSecondary]}>{cat.description}</Text>
             </Card>
           ))}
         </View>
 
         {__DEV__ && (
           <TouchableOpacity
-            style={styles.debugButton}
+            style={[styles.debugButton, isDark && styles.darkDebugButton]}
             onPress={() => navigation.navigate('Debug')}
           >
-            <Text style={styles.debugButtonText}>🛠️ System Diagnostics</Text>
+            <Text style={[styles.debugButtonText, isDark && styles.darkSettingsLabel]}>🛠️ System Diagnostics</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -73,9 +80,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fffdf9', // Ivory/Light yellow tint
   },
+  darkContainer: {
+    backgroundColor: '#120b24',
+  },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 110, // leave room for floating tab bar
   },
   header: {
     alignItems: 'center',
@@ -88,11 +98,17 @@ const styles = StyleSheet.create({
     color: '#7e22ce', // purple-700
     textAlign: 'center',
   },
+  darkTitle: {
+    color: '#c084fc',
+  },
   subtitle: {
     fontSize: 18,
     color: '#9333ea', // purple-600
     fontWeight: '500',
     marginTop: 8,
+  },
+  darkSubtitle: {
+    color: '#a855f7',
   },
   grid: {
     width: '100%',
@@ -114,11 +130,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+  darkText: {
+    color: '#f3e8ff',
+  },
   cardDescription: {
     fontSize: 16,
     color: '#4b5563',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  darkTextSecondary: {
+    color: '#cbd5e1',
   },
   settingsButton: {
     flexDirection: 'row',
@@ -131,8 +153,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(147, 51, 234, 0.2)',
   },
+  darkSettingsButton: {
+    backgroundColor: 'rgba(192, 132, 252, 0.08)',
+    borderColor: 'rgba(192, 132, 252, 0.2)',
+  },
   settingsIcon: { fontSize: 16, marginRight: 6 },
   settingsLabel: { fontSize: 14, color: '#7e22ce', fontWeight: '600' },
+  darkSettingsLabel: { color: '#c084fc' },
   debugButton: {
     marginTop: 40,
     padding: 15,
@@ -141,6 +168,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(126, 34, 206, 0.2)',
     alignItems: 'center',
+  },
+  darkDebugButton: {
+    backgroundColor: 'rgba(192, 132, 252, 0.1)',
+    borderColor: 'rgba(192, 132, 252, 0.2)',
   },
   debugButtonText: {
     color: '#7e22ce',

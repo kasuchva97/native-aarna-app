@@ -11,6 +11,9 @@ export interface Slide {
   telugu: string;
   english: string;
   image?: string;
+  imagePrompt?: string;
+  teluguSentences?: { text: string; mood: string }[];
+  englishSentences?: { text: string; mood: string }[];
 }
 
 export interface Story {

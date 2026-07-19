@@ -1,11 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Tts from 'react-native-tts';
-import { personalizeText } from '../utils/text';
+import FastImage from '@d11/react-native-fast-image';
+import { personalizeText, splitIntoSentences } from '../utils/text';
 import { Button } from '../components/ui/Button';
 import { useStory } from '../hooks/useStory';
+import { useProfileStore } from '../store/profileStore';
+
+const MOOD_PROFILES = {
+  calm:     { rate: 0.42, pitch: 0.95, pauseAfterMs: 400 },
+  excited:  { rate: 0.55, pitch: 1.18, pauseAfterMs: 200 },
+  sad:      { rate: 0.36, pitch: 0.85, pauseAfterMs: 600 },
+  suspense: { rate: 0.34, pitch: 0.90, pauseAfterMs: 700 },
+  curious:  { rate: 0.44, pitch: 1.08, pauseAfterMs: 350 },
+  happy:    { rate: 0.50, pitch: 1.10, pauseAfterMs: 300 },
+};
 
 const StoryViewer = ({ route, navigation }) => {
   const { storyId, profile } = route.params || {};
@@ -15,7 +26,18 @@ const StoryViewer = ({ route, navigation }) => {
   const ttsListener = useRef(null);
   const touchStartX = useRef(0);
 
+  const { completeStory, theme, profile: storeProfile } = useProfileStore();
+  const isDark = theme === 'dark';
+
+  const isPlayingRef = useRef(false);
+  const audioTimerRef = useRef(null);
+
   const cleanupTts = () => {
+    isPlayingRef.current = false;
+    if (audioTimerRef.current) {
+      clearTimeout(audioTimerRef.current);
+      audioTimerRef.current = null;
+    }
     if (ttsListener.current) {
       ttsListener.current.remove();
       ttsListener.current = null;
@@ -25,18 +47,37 @@ const StoryViewer = ({ route, navigation }) => {
 
   useEffect(() => () => cleanupTts(), []);
 
-  const handlePersonalize = (text) => personalizeText(text, profile);
+  // Unlock quiz when on the last slide
+  useEffect(() => {
+    if (story && currentSlide === story.slides.length - 1) {
+      completeStory(storyId);
+    }
+  }, [currentSlide, story]);
 
-  const playEnglish = async (text) => {
+  const handlePersonalize = (text) => {
+    if (!story || story.category !== 'aarna-adventures') {
+      return text;
+    }
+    return personalizeText(text, profile || storeProfile);
+  };
+
+  const setBestVoice = async (languageCode) => {
     try {
-      await Tts.setDefaultLanguage('en-US');
-      ttsListener.current = Tts.addEventListener('tts-finish', () => {
-        setIsPlaying(false);
-        cleanupTts();
-      });
-      Tts.speak(text);
-    } catch {
-      setIsPlaying(false);
+      const voices = await Tts.voices();
+      const candidates = voices.filter(v => v.language.startsWith(languageCode) && !v.networkConnectionRequired);
+      const best = candidates.sort((a, b) => (b.quality ?? 0) - (a.quality ?? 0))[0];
+      if (best) {
+        await Tts.setDefaultVoice(best.id);
+      } else {
+        const langMap = { te: 'te-IN', en: 'en-US' };
+        await Tts.setDefaultLanguage(langMap[languageCode] || 'en-US');
+      }
+    } catch (e) {
+      console.warn('Error setting best voice:', e);
+      const langMap = { te: 'te-IN', en: 'en-US' };
+      try {
+        await Tts.setDefaultLanguage(langMap[languageCode] || 'en-US');
+      } catch (err) {}
     }
   };
 
@@ -51,23 +92,93 @@ const StoryViewer = ({ route, navigation }) => {
 
     setIsPlaying(true);
     cleanupTts();
+    isPlayingRef.current = true;
 
     const slide = story.slides[currentSlide];
-    const teluguText = handlePersonalize(slide.telugu);
-    const englishText = handlePersonalize(slide.english);
+    const chosenLanguage = profile?.language || storeProfile?.language || 'en';
+
+    let sentences = [];
+    let langCode = 'en';
+
+    if (chosenLanguage === 'te') {
+      sentences = slide.teluguSentences || splitIntoSentences(slide.telugu, 'calm');
+      langCode = 'te';
+    } else {
+      sentences = slide.englishSentences || splitIntoSentences(slide.english, 'calm');
+      langCode = 'en';
+    }
 
     try {
-      await Tts.setDefaultLanguage('te-IN');
-      ttsListener.current = Tts.addEventListener('tts-finish', () => {
-        if (ttsListener.current) {
-          ttsListener.current.remove();
-          ttsListener.current = null;
-        }
-        playEnglish(englishText);
-      });
-      Tts.speak(teluguText);
-    } catch {
-      playEnglish(englishText);
+      await setBestVoice(langCode);
+
+      for (let i = 0; i < sentences.length; i++) {
+        if (!isPlayingRef.current) break;
+
+        const sentence = sentences[i];
+        const rawText = handlePersonalize(sentence.text);
+        const profileMood = MOOD_PROFILES[sentence.mood] ?? MOOD_PROFILES.calm;
+
+        await Tts.setDefaultRate(profileMood.rate);
+
+        const kidName = profile?.kidName || storeProfile?.kidName;
+
+        const playSentencePromise = new Promise(async (resolve) => {
+          let queuedCount = 0;
+          let finishedCount = 0;
+
+          if (ttsListener.current) {
+            ttsListener.current.remove();
+          }
+
+          ttsListener.current = Tts.addEventListener('tts-finish', () => {
+            finishedCount++;
+            if (finishedCount >= queuedCount) {
+              resolve();
+            }
+          });
+
+          // Highlight / Emphasize character name by splitting the sentence
+          if (kidName && rawText.includes(kidName)) {
+            const parts = rawText.split(kidName);
+            if (parts.length === 2) {
+              const [before, after] = parts;
+              if (before.trim().length > 0) {
+                await Tts.setDefaultPitch(profileMood.pitch);
+                await Tts.speak(before);
+                queuedCount++;
+              }
+              await Tts.setDefaultPitch(profileMood.pitch * 1.15);
+              await Tts.speak(kidName);
+              queuedCount++;
+
+              if (after.trim().length > 0) {
+                await Tts.setDefaultPitch(profileMood.pitch);
+                await Tts.speak(after);
+                queuedCount++;
+              }
+              return;
+            }
+          }
+
+          await Tts.setDefaultPitch(profileMood.pitch);
+          await Tts.speak(rawText);
+          queuedCount++;
+        });
+
+        await playSentencePromise;
+
+        if (!isPlayingRef.current) break;
+
+        await new Promise((resolve) => {
+          audioTimerRef.current = setTimeout(resolve, profileMood.pauseAfterMs);
+        });
+      }
+    } catch (e) {
+      console.warn('Error in audio playback loop:', e);
+    } finally {
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+      cleanupTts();
     }
   };
 
@@ -117,13 +228,13 @@ const StoryViewer = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.flex1}>
-      <LinearGradient colors={['#f3e8ff', '#fce7f3', '#dbeafe']} style={styles.flex1}>
+      <LinearGradient colors={isDark ? ['#1e1b4b', '#120b24', '#0f0a1c'] : ['#f3e8ff', '#fce7f3', '#dbeafe']} style={styles.flex1}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backText}>← Back</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, isDark && styles.darkBackButton]}>
+            <Text style={[styles.backText, isDark && styles.darkBackText]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title} numberOfLines={1}>{handlePersonalize(story.title)}</Text>
-          <Text style={styles.slideCounter}>{currentSlide + 1} / {story.slides.length}</Text>
+          <Text style={[styles.title, isDark && styles.darkTitle]} numberOfLines={1}>{handlePersonalize(story.title)}</Text>
+          <Text style={[styles.slideCounter, isDark && styles.darkCounter]}>{currentSlide + 1} / {story.slides.length}</Text>
         </View>
 
         <ScrollView
@@ -135,23 +246,31 @@ const StoryViewer = ({ route, navigation }) => {
             else if (dx > 50) prevSlide();
           }}
         >
-          <View style={styles.card}>
-            {currentSlideData.image ? (
-              <Image source={{ uri: currentSlideData.image }} style={styles.image} />
+          <View style={[styles.card, isDark && styles.darkCard]}>
+            {currentSlideData.image || currentSlideData.imagePrompt ? (
+              <FastImage
+                source={{
+                  uri: currentSlideData.image || `https://image.pollinations.ai/prompt/${encodeURIComponent(currentSlideData.imagePrompt)}?width=1024&height=1024&nologo=true&seed=42`,
+                  priority: FastImage.priority.high,
+                  cache: FastImage.cacheControl.immutable,
+                }}
+                style={styles.image}
+                resizeMode={FastImage.resizeMode.cover}
+              />
             ) : (
-              <View style={styles.imagePlaceholder}>
+              <View style={[styles.imagePlaceholder, isDark && styles.darkImagePlaceholder]}>
                 <Text style={styles.imagePlaceholderText}>📖</Text>
               </View>
             )}
 
-            <View style={styles.teluguSection}>
-              <Text style={styles.sectionTitle}>📖 తెలుగు:</Text>
-              <Text style={styles.teluguText}>{handlePersonalize(currentSlideData.telugu)}</Text>
+            <View style={[styles.teluguSection, isDark && styles.darkTeluguSection]}>
+              <Text style={[styles.sectionTitle, isDark && styles.darkTeluguTitle]}>📖 తెలుగు:</Text>
+              <Text style={[styles.teluguText, isDark && styles.darkTeluguText]}>{handlePersonalize(currentSlideData.telugu)}</Text>
             </View>
 
-            <View style={styles.englishSection}>
-              <Text style={styles.sectionTitleBlue}>📖 English:</Text>
-              <Text style={styles.englishText}>{handlePersonalize(currentSlideData.english)}</Text>
+            <View style={[styles.englishSection, isDark && styles.darkEnglishSection]}>
+              <Text style={[styles.sectionTitleBlue, isDark && styles.darkEnglishTitle]}>📖 English:</Text>
+              <Text style={[styles.englishText, isDark && styles.darkEnglishText]}>{handlePersonalize(currentSlideData.english)}</Text>
             </View>
 
             <View style={styles.audioControls}>
@@ -162,6 +281,33 @@ const StoryViewer = ({ route, navigation }) => {
                 {isPlaying ? '⏹ Stop Story' : '▶ Play Story'}
               </Button>
             </View>
+
+            {currentSlide === story.slides.length - 1 && story.quiz && (
+              <View style={styles.quizButtonContainer}>
+                <Button
+                  onPress={() => {
+                    let badgeToUnlock = 'Adventure Master';
+                    if (story.category === 'krishna') badgeToUnlock = 'Krishna Master';
+                    else if (story.category === 'hanuman') badgeToUnlock = 'Hanuman Master';
+                    else if (story.category === 'ganesha') badgeToUnlock = 'Ganesha Master';
+                    else if (story.category === 'rama') badgeToUnlock = 'Rama Master';
+                    else if (story.category === 'panchatantra') badgeToUnlock = 'Panchatantra Master';
+                    else if (story.category === 'animal-fables') badgeToUnlock = 'Fables Master';
+                    else if (story.category === 'ramayana') badgeToUnlock = 'Ramayana Master';
+
+                    navigation.navigate('QuizScreen', {
+                      storyId: story.id,
+                      storyTitle: story.title,
+                      quizQuestions: story.quiz,
+                      badgeToUnlock,
+                    });
+                  }}
+                  colors={['#fb923c', '#ea580c']}
+                >
+                  Take Quiz 📝
+                </Button>
+              </View>
+            )}
 
             <View style={styles.navControls}>
               <TouchableOpacity onPress={prevSlide} disabled={currentSlide === 0} style={[styles.navButton, currentSlide === 0 && styles.navButtonDisabled]}>
@@ -221,6 +367,19 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#d1d5db', marginHorizontal: 4 },
   dotActive: { backgroundColor: '#9333ea', transform: [{ scale: 1.2 }] },
   swipeHint: { textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 16 },
+  darkCard: { backgroundColor: '#1c1133', shadowColor: '#000' },
+  darkTitle: { color: '#f3e8ff' },
+  darkCounter: { color: '#c084fc' },
+  darkBackButton: { backgroundColor: '#1c1133', borderColor: 'rgba(147, 51, 234, 0.4)' },
+  darkBackText: { color: '#c084fc' },
+  darkImagePlaceholder: { backgroundColor: '#160e29' },
+  darkTeluguSection: { backgroundColor: '#2a1a10', borderLeftColor: '#f97316' },
+  darkTeluguTitle: { color: '#fed7aa' },
+  darkTeluguText: { color: '#ffedd5' },
+  darkEnglishSection: { backgroundColor: '#111827', borderLeftColor: '#3b82f6' },
+  darkEnglishTitle: { color: '#93c5fd' },
+  darkEnglishText: { color: '#dbeafe' },
+  quizButtonContainer: { marginVertical: 10, alignItems: 'center' },
 });
 
 export default StoryViewer;

@@ -116,9 +116,11 @@ const LangChip = ({ item, selected, onSelect }) => {
     onSelect(item.code);
   };
 
+  const translateY = selected ? 4 : 0;
+
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.85}>
-      <Animated.View style={[styles.langChip, selected && styles.langChipSelected, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[styles.langChip, selected && styles.langChipSelected, { transform: [{ scale: scaleAnim }, { translateY }] }]}>
         <Text style={styles.langEmoji}>{item.emoji}</Text>
         <Text style={[styles.langText, selected && styles.langTextSelected]}>{item.native}</Text>
       </Animated.View>
@@ -138,9 +140,11 @@ const PurposeCard = ({ item, selected, onSelect }) => {
     onSelect(item.id);
   };
 
+  const translateY = selected ? 4 : 0;
+
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.purposeCardWrap}>
-      <Animated.View style={[styles.purposeCard, selected && styles.purposeCardSelected, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[styles.purposeCard, selected && styles.purposeCardSelected, { transform: [{ scale: scaleAnim }, { translateY }] }]}>
         <Text style={styles.purposeIcon}>{item.icon}</Text>
         <Text style={[styles.purposeTitle, selected && styles.purposeTitleSelected]}>{item.title}</Text>
         <Text style={[styles.purposeDesc, selected && styles.purposeDescSelected]}>{item.desc}</Text>
@@ -161,9 +165,11 @@ const GenderOption = ({ emoji, label, selected, onSelect }) => {
     onSelect();
   };
 
+  const translateY = selected ? 4 : 0;
+
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.genderWrap}>
-      <Animated.View style={[styles.genderOption, selected && styles.genderOptionSelected, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[styles.genderOption, selected && styles.genderOptionSelected, { transform: [{ scale: scaleAnim }, { translateY }] }]}>
         <Text style={styles.genderEmoji}>{emoji}</Text>
         <Text style={[styles.genderLabel, selected && styles.genderLabelSelected]}>{label}</Text>
       </Animated.View>
@@ -193,6 +199,8 @@ const OnboardingScreen = ({ navigation, route }) => {
   const cardSlideAnim = useRef(new Animated.Value(30)).current;
   // Character pop (when gender changes)
   const charScaleAnim = useRef(new Animated.Value(1)).current;
+  // Progress bar animation
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   // Continuous float
   useEffect(() => {
@@ -212,7 +220,7 @@ const OnboardingScreen = ({ navigation, route }) => {
     cardSlideAnim.setValue(30);
     Animated.parallel([
       Animated.timing(entranceAnim, { toValue: 1, duration: 380, useNativeDriver: true }),
-      Animated.spring(cardSlideAnim, { toValue: 0, tension: 55, friction: 10, useNativeDriver: true }),
+      Animated.spring(cardSlideAnim, { toValue: 0, tension: 100, friction: 6, useNativeDriver: true }),
     ]).start();
   }, [step]);
 
@@ -226,13 +234,32 @@ const OnboardingScreen = ({ navigation, route }) => {
     }
   }, [gender]);
 
+  // Smooth progress animation
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: (step + 1) / STEPS.length,
+      duration: 350,
+      useNativeDriver: false,
+    }).start();
+  }, [step]);
+
   const currentStep = STEPS[step];
 
   const getCharacter = () => {
+    if (step === 0) {
+      return language ? '👋' : '📖';
+    }
+    if (step === 1) {
+      return purpose ? '🥳' : '🌟';
+    }
     if (step === 2) {
-      if (gender === 'boy') return '🐶';
-      if (gender === 'girl') return '🐱';
+      if (gender === 'boy') return '🦁';
+      if (gender === 'girl') return '🦄';
       return '🧸';
+    }
+    if (step === 3) {
+      const allFilled = kidName.trim() && fatherName.trim() && motherName.trim();
+      return allFilled ? '🦄' : '🏡';
     }
     return currentStep.character;
   };
@@ -285,10 +312,13 @@ const OnboardingScreen = ({ navigation, route }) => {
                 <Text style={styles.backIcon}>←</Text>
               </TouchableOpacity>
             ) : <View style={styles.backBtn} />}
-            <View style={styles.dotsRow}>
-              {STEPS.map((_, i) => (
-                <View key={i} style={[styles.dot, i <= step && styles.dotActive]} />
-              ))}
+            <View style={styles.progressBarTrack}>
+              <Animated.View style={[styles.progressBarFill, {
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                })
+              }]} />
             </View>
             <View style={styles.backBtn} />
           </View>
@@ -363,13 +393,13 @@ const OnboardingScreen = ({ navigation, route }) => {
               {step === 2 && (
                 <View style={styles.genderRow}>
                   <GenderOption
-                    emoji="🐶"
+                    emoji="🦁"
                     label="Boy"
                     selected={gender === 'boy'}
                     onSelect={() => setGender('boy')}
                   />
                   <GenderOption
-                    emoji="🐱"
+                    emoji="🦄"
                     label="Girl"
                     selected={gender === 'girl'}
                     onSelect={() => setGender('girl')}
@@ -447,9 +477,19 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 40, alignItems: 'center', justifyContent: 'center' },
   backIcon: { fontSize: 26, color: 'rgba(255,255,255,0.9)', fontWeight: 'bold' },
-  dotsRow: { flexDirection: 'row', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.3)' },
-  dotActive: { backgroundColor: '#fff', width: 22, borderRadius: 4 },
+  progressBarTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 4,
+    marginHorizontal: 16,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 4,
+  },
 
   // Character stage
   stage: {
@@ -463,27 +503,20 @@ const styles = StyleSheet.create({
   // Card
   card: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 10,
+    backgroundColor: 'transparent',
   },
   cardContent: { padding: 28, paddingBottom: 40 },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#ffffff',
     textAlign: 'center',
     lineHeight: 36,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6b7280',
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -497,27 +530,37 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 2,
+    borderBottomWidth: 6,
     borderColor: '#e9d5ff',
     backgroundColor: '#faf5ff',
   },
-  langChipSelected: { borderColor: '#7e22ce', backgroundColor: '#ede9fe' },
+  langChipSelected: {
+    borderColor: '#7e22ce',
+    borderBottomWidth: 2,
+    backgroundColor: '#ede9fe',
+  },
   langEmoji: { fontSize: 22 },
-  langText: { fontSize: 16, fontWeight: '600', color: '#374151' },
+  langText: { fontSize: 16, fontWeight: '600', color: '#4b5563' },
   langTextSelected: { color: '#7e22ce' },
 
   // Purpose cards
   purposeCardWrap: { width: (width - 56 - 12) / 2 },
   purposeCard: {
     padding: 14,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 2,
+    borderBottomWidth: 6,
     borderColor: '#e9d5ff',
     backgroundColor: '#faf5ff',
     alignItems: 'center',
   },
-  purposeCardSelected: { borderColor: '#7e22ce', backgroundColor: '#ede9fe' },
+  purposeCardSelected: {
+    borderColor: '#7e22ce',
+    borderBottomWidth: 2,
+    backgroundColor: '#ede9fe',
+  },
   purposeIcon: { fontSize: 30, marginBottom: 6 },
   purposeTitle: { fontSize: 13, fontWeight: '700', color: '#374151', textAlign: 'center', marginBottom: 3 },
   purposeTitleSelected: { color: '#7e22ce' },
@@ -532,10 +575,15 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     borderRadius: 20,
     borderWidth: 2.5,
+    borderBottomWidth: 6,
     borderColor: '#e9d5ff',
     backgroundColor: '#faf5ff',
   },
-  genderOptionSelected: { borderColor: '#7e22ce', backgroundColor: '#ede9fe' },
+  genderOptionSelected: {
+    borderColor: '#7e22ce',
+    borderBottomWidth: 2.5,
+    backgroundColor: '#ede9fe',
+  },
   genderEmoji: { fontSize: 56, marginBottom: 10 },
   genderLabel: { fontSize: 16, fontWeight: '700', color: '#374151' },
   genderLabelSelected: { color: '#7e22ce' },
@@ -543,7 +591,7 @@ const styles = StyleSheet.create({
   // Names form
   namesForm: { marginBottom: 4 },
   inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: '#7e22ce', marginBottom: 6 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: '#f3e8ff', marginBottom: 6 },
   input: {
     backgroundColor: '#faf5ff',
     borderWidth: 2,
