@@ -30,6 +30,15 @@ export const fetchStoryById = async (id: string): Promise<Story> => {
   return data;
 };
 
+export const fetchAllStories = async (): Promise<Story[]> => {
+  const { data, error } = await supabase
+    .from('stories')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+};
+
 export const fetchPoemsByCategory = async (category: string): Promise<Poem[]> => {
   const { data, error } = await supabase
     .from('poems')

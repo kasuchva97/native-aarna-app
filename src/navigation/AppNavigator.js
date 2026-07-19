@@ -12,6 +12,8 @@ import PoemViewer from '../screens/PoemViewer';
 import GameViewer from '../screens/GameViewer';
 import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
+import MainShell from '../screens/MainShell';
+import QuizScreen from '../screens/QuizScreen';
 
 const Stack = createStackNavigator();
 
@@ -36,9 +38,8 @@ const AppNavigator = ({ profile, onSplashComplete, onProfileComplete }) => {
       <Stack.Screen name="Onboarding">
         {(props) => <OnboardingScreen {...props} onComplete={onProfileComplete} />}
       </Stack.Screen>
-      <Stack.Screen name="Home">
-        {(props) => <HomeScreen {...props} profile={profile} />}
-      </Stack.Screen>
+      <Stack.Screen name="Home" component={MainShell} />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} />
       <Stack.Screen name="MythologyGrid" component={MythologyGrid} />
       <Stack.Screen name="AarnaGrid" component={AarnaGrid} />
       <Stack.Screen name="HistoryGrid" component={HistoryGrid} />

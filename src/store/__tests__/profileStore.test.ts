@@ -93,3 +93,56 @@ describe('clearProfile', () => {
     expect(useProfileStore.getState().profile).toBeNull();
   });
 });
+
+describe('theme and rewards state', () => {
+  beforeEach(() => {
+    useProfileStore.setState({
+      theme: 'light',
+      completedStories: [],
+      quizScores: {},
+      unlockedBadges: [],
+    });
+  });
+
+  it('toggles theme correctly', async () => {
+    mockStorage.setItem.mockResolvedValue(undefined);
+
+    expect(useProfileStore.getState().theme).toBe('light');
+
+    await useProfileStore.getState().toggleTheme();
+    expect(useProfileStore.getState().theme).toBe('dark');
+
+    await useProfileStore.getState().toggleTheme();
+    expect(useProfileStore.getState().theme).toBe('light');
+  });
+
+  it('marks story as completed', async () => {
+    mockStorage.setItem.mockResolvedValue(undefined);
+
+    expect(useProfileStore.getState().completedStories).toEqual([]);
+
+    await useProfileStore.getState().completeStory('krishna-story-1');
+    expect(useProfileStore.getState().completedStories).toEqual(['krishna-story-1']);
+
+    // Should not add duplicates
+    await useProfileStore.getState().completeStory('krishna-story-1');
+    expect(useProfileStore.getState().completedStories).toEqual(['krishna-story-1']);
+  });
+
+  it('saves quiz score and unlocks badges', async () => {
+    mockStorage.setItem.mockResolvedValue(undefined);
+
+    expect(useProfileStore.getState().quizScores).toEqual({});
+    expect(useProfileStore.getState().unlockedBadges).toEqual([]);
+
+    await useProfileStore.getState().saveQuizScore('krishna-story-1', 3, 'Krishna Master');
+    expect(useProfileStore.getState().quizScores['krishna-story-1']).toBe(3);
+    expect(useProfileStore.getState().unlockedBadges).toContain('Krishna Master');
+
+    // Perfect score of 3 awards badge, lower score of 1 does not award duplicate/incorrect badge
+    await useProfileStore.getState().saveQuizScore('krishna-story-2', 1, 'Krishna Hero');
+    expect(useProfileStore.getState().quizScores['krishna-story-2']).toBe(1);
+    expect(useProfileStore.getState().unlockedBadges).not.toContain('Krishna Hero');
+  });
+});
+

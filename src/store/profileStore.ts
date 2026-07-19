@@ -5,25 +5,44 @@ import { Profile } from '../types';
 
 interface ProfileState {
   profile: Profile | null;
+  theme: 'light' | 'dark';
+  completedStories: string[];
+  quizScores: Record<string, number>;
+  unlockedBadges: string[];
   setProfile: (profile: Profile) => Promise<void>;
   updateProfile: (partial: Partial<Profile>) => Promise<void>;
   loadProfile: () => Promise<Profile | null>;
   clearProfile: () => Promise<void>;
+  toggleTheme: () => Promise<void>;
+  completeStory: (storyId: string) => Promise<void>;
+  saveQuizScore: (storyId: string, score: number, badgeToUnlock?: string) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   profile: null,
+  theme: 'light',
+  completedStories: [],
+  quizScores: {},
+  unlockedBadges: [],
 
   setProfile: async (profile) => {
-    await secureStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
     set({ profile });
+    try {
+      await secureStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+    } catch (e) {
+      console.warn('SecureStorage write failed:', e);
+    }
   },
 
   updateProfile: async (partial) => {
     const current = get().profile;
     const updated: Profile = { ...(current as Profile), ...partial };
-    await secureStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
     set({ profile: updated });
+    try {
+      await secureStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+    } catch (e) {
+      console.warn('SecureStorage update failed:', e);
+    }
   },
 
   loadProfile: async () => {
@@ -31,7 +50,20 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       const raw = await secureStorage.getItem(STORAGE_KEYS.PROFILE);
       if (!raw) return null;
       const profile: Profile = JSON.parse(raw);
-      set({ profile });
+
+      // Load theme and rewards
+      const theme = (await secureStorage.getItem('BALAKATHA_THEME') as 'light' | 'dark') || 'light';
+      const completed = JSON.parse((await secureStorage.getItem('BALAKATHA_COMPLETED')) || '[]');
+      const scores = JSON.parse((await secureStorage.getItem('BALAKATHA_SCORES')) || '{}');
+      const badges = JSON.parse((await secureStorage.getItem('BALAKATHA_BADGES')) || '[]');
+
+      set({
+        profile,
+        theme,
+        completedStories: completed,
+        quizScores: scores,
+        unlockedBadges: badges
+      });
       return profile;
     } catch {
       return null;
@@ -40,6 +72,48 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   clearProfile: async () => {
     await secureStorage.removeItem(STORAGE_KEYS.PROFILE);
-    set({ profile: null });
+    await secureStorage.removeItem('BALAKATHA_THEME');
+    await secureStorage.removeItem('BALAKATHA_COMPLETED');
+    await secureStorage.removeItem('BALAKATHA_SCORES');
+    await secureStorage.removeItem('BALAKATHA_BADGES');
+    set({
+      profile: null,
+      theme: 'light',
+      completedStories: [],
+      quizScores: {},
+      unlockedBadges: [],
+    });
+  },
+
+  toggleTheme: async () => {
+    const newTheme = get().theme === 'light' ? 'dark' : 'light';
+    await secureStorage.setItem('BALAKATHA_THEME', newTheme);
+    set({ theme: newTheme });
+  },
+
+  completeStory: async (storyId) => {
+    const current = get().completedStories;
+    if (current.includes(storyId)) return;
+    const updated = [...current, storyId];
+    await secureStorage.setItem('BALAKATHA_COMPLETED', JSON.stringify(updated));
+    set({ completedStories: updated });
+  },
+
+  saveQuizScore: async (storyId, score, badgeToUnlock) => {
+    const currentScores = get().quizScores;
+    const updatedScores = { ...currentScores, [storyId]: score };
+    await secureStorage.setItem('BALAKATHA_SCORES', JSON.stringify(updatedScores));
+
+    const currentBadges = get().unlockedBadges;
+    let updatedBadges = [...currentBadges];
+    if (score === 3 && badgeToUnlock && !currentBadges.includes(badgeToUnlock)) {
+      updatedBadges.push(badgeToUnlock);
+      await secureStorage.setItem('BALAKATHA_BADGES', JSON.stringify(updatedBadges));
+    }
+
+    set({
+      quizScores: updatedScores,
+      unlockedBadges: updatedBadges
+    });
   },
 }));

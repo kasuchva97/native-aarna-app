@@ -10,14 +10,16 @@ import { useProfileStore } from '../store/profileStore';
 import { Button } from '../components/ui/Button';
 
 const SettingsScreen = ({ navigation }) => {
-  const { profile, updateProfile } = useProfileStore();
+  const { profile, updateProfile, theme } = useProfileStore();
   const [kidName, setKidName] = useState(profile?.kidName || '');
   const [fatherName, setFatherName] = useState(profile?.fatherName || '');
   const [motherName, setMotherName] = useState(profile?.motherName || '');
+  const [language, setLanguage] = useState(profile?.language || 'en');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [appVersion, setAppVersion] = useState('');
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     Promise.all([DeviceInfo.getVersion(), DeviceInfo.getBuildNumber()])
@@ -27,7 +29,8 @@ const SettingsScreen = ({ navigation }) => {
   const hasChanges =
     kidName.trim() !== (profile?.kidName || '') ||
     fatherName.trim() !== (profile?.fatherName || '') ||
-    motherName.trim() !== (profile?.motherName || '');
+    motherName.trim() !== (profile?.motherName || '') ||
+    language !== (profile?.language || 'en');
 
   const handleSave = async () => {
     if (!kidName.trim() || !fatherName.trim() || !motherName.trim()) {
@@ -41,6 +44,7 @@ const SettingsScreen = ({ navigation }) => {
         kidName: kidName.trim(),
         fatherName: fatherName.trim(),
         motherName: motherName.trim(),
+        language,
       });
       setSaved(true);
       setTimeout(() => navigation.goBack(), 800);
@@ -52,12 +56,12 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#7e22ce', '#9333ea']} style={styles.header}>
+    <SafeAreaView style={[styles.container, isDark && styles.darkContainer]}>
+      <LinearGradient colors={isDark ? ['#3b0764', '#1c1133'] : ['#7e22ce', '#9333ea']} style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Names</Text>
+        <Text style={styles.headerTitle}>Edit Settings</Text>
         <View style={styles.backButton} />
       </LinearGradient>
 
@@ -66,62 +70,98 @@ const SettingsScreen = ({ navigation }) => {
         style={styles.flex}
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.sectionNote}>
-            These names appear throughout your stories and adventures.
+          <Text style={[styles.sectionNote, isDark && styles.darkTextSecondary]}>
+            Personalize names and settings for your stories and narration.
           </Text>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Kid's Name</Text>
+              <Text style={[styles.label, isDark && styles.darkLabel]}>Kid's Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark && styles.darkInput]}
                 value={kidName}
                 onChangeText={(t) => { setKidName(t); setError(''); setSaved(false); }}
                 placeholder="e.g., Aarna"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor={isDark ? '#94a3b8' : '#a8a29e'}
                 maxLength={30}
                 returnKeyType="next"
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Father's Name</Text>
+              <Text style={[styles.label, isDark && styles.darkLabel]}>Father's Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark && styles.darkInput]}
                 value={fatherName}
                 onChangeText={(t) => { setFatherName(t); setError(''); setSaved(false); }}
                 placeholder="e.g., Ram"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor={isDark ? '#94a3b8' : '#a8a29e'}
                 maxLength={30}
                 returnKeyType="next"
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Mother's Name</Text>
+              <Text style={[styles.label, isDark && styles.darkLabel]}>Mother's Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDark && styles.darkInput]}
                 value={motherName}
                 onChangeText={(t) => { setMotherName(t); setError(''); setSaved(false); }}
                 placeholder="e.g., Lahari"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor={isDark ? '#94a3b8' : '#a8a29e'}
                 maxLength={30}
                 returnKeyType="done"
                 onSubmitEditing={handleSave}
               />
             </View>
 
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, isDark && styles.darkLabel]}>Narration Language</Text>
+              <View style={styles.langSelectorRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.langSelectorOpt,
+                    isDark && styles.darkSelectorOpt,
+                    language === 'en' && styles.langSelectorOptSelected,
+                    isDark && language === 'en' && styles.darkSelectorOptSelected
+                  ]}
+                  onPress={() => { setLanguage('en'); setSaved(false); }}
+                >
+                  <Text style={styles.langOptEmoji}>🇮🇳</Text>
+                  <Text style={[
+                    styles.langOptText,
+                    isDark && styles.darkTextSecondary,
+                    language === 'en' && styles.langOptTextSelected,
+                    isDark && language === 'en' && styles.darkText
+                  ]}>English</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.langSelectorOpt,
+                    isDark && styles.darkSelectorOpt,
+                    language === 'te' && styles.langSelectorOptSelected,
+                    isDark && language === 'te' && styles.darkSelectorOptSelected
+                  ]}
+                  onPress={() => { setLanguage('te'); setSaved(false); }}
+                >
+                  <Text style={styles.langOptEmoji}>🌺</Text>
+                  <Text style={[
+                    styles.langOptText,
+                    isDark && styles.darkTextSecondary,
+                    language === 'te' && styles.langOptTextSelected,
+                    isDark && language === 'te' && styles.darkText
+                  ]}>తెలుగు</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             {saved ? (
               <View style={styles.savedBanner}>
-                <Text style={styles.savedText}>✓ Names saved successfully!</Text>
+                <Text style={styles.savedText}>✓ Settings saved successfully!</Text>
               </View>
             ) : null}
-
-            <View style={styles.versionRow}>
-              <Text style={styles.versionText}>BalaKatha {appVersion}</Text>
-            </View>
 
             {saving ? (
               <View style={styles.savingRow}>
@@ -139,12 +179,17 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <View style={styles.versionBottomContainer}>
+        <Text style={styles.versionText}>BalaKatha {appVersion}</Text>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fffdf9' },
+  darkContainer: { backgroundColor: '#120b24' },
   flex: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -156,7 +201,7 @@ const styles = StyleSheet.create({
   backButton: { width: 40, alignItems: 'center' },
   backArrow: { fontSize: 24, color: 'white', fontWeight: 'bold' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: 'white' },
-  content: { padding: 24, paddingBottom: 48 },
+  content: { padding: 24, paddingBottom: 80 },
   sectionNote: {
     fontSize: 15,
     color: '#6b7280',
@@ -164,9 +209,16 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     lineHeight: 22,
   },
+  darkTextSecondary: {
+    color: '#cbd5e1',
+  },
+  darkText: {
+    color: '#f3e8ff',
+  },
   form: { width: '100%' },
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#7e22ce', marginBottom: 8 },
+  darkLabel: { color: '#c084fc' },
   input: {
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -176,6 +228,51 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 16,
     color: '#1f2937',
+  },
+  darkInput: {
+    backgroundColor: '#160e29',
+    borderColor: 'rgba(147, 51, 234, 0.2)',
+    color: '#f3e8ff',
+  },
+  langSelectorRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  langSelectorOpt: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e9d5ff',
+    backgroundColor: '#fff',
+  },
+  darkSelectorOpt: {
+    backgroundColor: '#1c1133',
+    borderColor: 'rgba(147, 51, 234, 0.2)',
+  },
+  langSelectorOptSelected: {
+    borderColor: '#7e22ce',
+    backgroundColor: '#ede9fe',
+  },
+  darkSelectorOptSelected: {
+    borderColor: '#c084fc',
+    backgroundColor: '#3b0764',
+  },
+  langOptEmoji: {
+    fontSize: 18,
+  },
+  langOptText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4b5563',
+  },
+  langOptTextSelected: {
+    color: '#7e22ce',
   },
   errorText: { color: '#dc2626', fontSize: 14, textAlign: 'center', marginBottom: 12, fontWeight: '500' },
   savedBanner: {
@@ -191,7 +288,14 @@ const styles = StyleSheet.create({
   savedText: { color: '#16a34a', fontWeight: '600', fontSize: 15 },
   savingRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16 },
   savingText: { marginLeft: 10, color: '#9333ea', fontSize: 16, fontWeight: '600' },
-  versionRow: { alignItems: 'center', marginBottom: 16 },
+  versionBottomContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   versionText: { fontSize: 13, color: '#9ca3af' },
 });
 

@@ -7,7 +7,7 @@ jest.mock('react-native-encrypted-storage', () => ({
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { secureStorage } from '../secureStorage';
 
-const mock = EncryptedStorage as jest.Mocked<typeof EncryptedStorage>;
+const mock = EncryptedStorage as any;
 
 beforeEach(() => jest.clearAllMocks());
 
