@@ -4,12 +4,17 @@ import { runSecurityCheck } from './src/utils/security';
 import BlockedScreen from './src/screens/BlockedScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { PostHogProvider } from 'posthog-react-native';
+import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import Config from 'react-native-config';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { useProfileStore } from './src/store/profileStore';
 import { SecurityReason } from './src/types';
+
+const ErrorBoundaryWithPostHog = ({ children }: { children: React.ReactNode }) => {
+  const posthog = usePostHog();
+  return <ErrorBoundary posthog={posthog}>{children}</ErrorBoundary>;
+};
 
 function App() {
   const { profile, loadProfile } = useProfileStore();
@@ -58,19 +63,28 @@ function App() {
     );
   }
 
+  const apiKey = Config.POSTHOG_API_KEY || '';
+  const isPostHogEnabled = Boolean(apiKey && apiKey.trim().length > 0);
+
   return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <PostHogProvider
-          apiKey={Config.POSTHOG_API_KEY ?? ''}
-          options={{
-            host: Config.POSTHOG_HOST ?? 'https://us.i.posthog.com',
-          }}
-          autocapture={{
-            captureScreens: false,
-            captureTouches: true,
-          }}
-        >
+    <SafeAreaProvider>
+      <PostHogProvider
+        apiKey={apiKey || 'phc_disabled'}
+        options={{
+          host: Config.POSTHOG_HOST || 'https://us.i.posthog.com',
+          disabled: !isPostHogEnabled,
+          enableSessionReplay: isPostHogEnabled,
+          sessionReplayConfig: {
+            androidDebouncerDelayMs: 500,
+            iOSdebouncerDelayMs: 500,
+          },
+        }}
+        autocapture={{
+          captureScreens: false,
+          captureTouches: isPostHogEnabled,
+        }}
+      >
+        <ErrorBoundaryWithPostHog>
           <NavigationContainer>
             <AppNavigator
               profile={profile}
@@ -78,9 +92,9 @@ function App() {
               onProfileComplete={handleProfileComplete}
             />
           </NavigationContainer>
-        </PostHogProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+        </ErrorBoundaryWithPostHog>
+      </PostHogProvider>
+    </SafeAreaProvider>
   );
 }
 

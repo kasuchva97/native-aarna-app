@@ -21,6 +21,7 @@
     "@testing-library/react-native": "^13.3.3",
     "axios": "^1.14.0",
     "posthog-react-native": "^4.43.5",
+    "posthog-react-native-session-replay": "^1.6.0",
     "react": "19.2.3",
     "react-native": "0.84.1",
     "react-native-config": "^1.6.1",
