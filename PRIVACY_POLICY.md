@@ -70,5 +70,5 @@ We may update our Privacy Policy from time to time. Any changes will be posted o
 
 If you have any questions, feedback, or requests regarding this Privacy Policy or data privacy, please contact us at:
 
-- **Email**: `privacy@balakatha.app` *(or your preferred support email)*
+- **Email**: `kantetivarshit999@gmail.com`
 - **App**: BalaKatha
