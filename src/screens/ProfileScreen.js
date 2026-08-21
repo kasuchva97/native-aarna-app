@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import { Button } from '../components/ui/Button';
+import { SuccessBanner } from '../components/ui/StateViews';
 
 const ProfileScreen = ({ navigation, route }) => {
   const { onComplete } = route.params || {};
@@ -13,6 +14,7 @@ const ProfileScreen = ({ navigation, route }) => {
   const [motherName, setMotherName] = useState('');
   const [validationError, setValidationError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
 
   const handleSubmit = async () => {
@@ -32,14 +34,16 @@ const ProfileScreen = ({ navigation, route }) => {
 
     try {
       await AsyncStorage.setItem('balakatha.profile', JSON.stringify(profileInfo));
-      if (onComplete) {
-        onComplete(profileInfo, navigation);
-      } else {
-        navigation.replace('Home');
-      }
+      setSaved(true);
+      setTimeout(() => {
+        if (onComplete) {
+          onComplete(profileInfo, navigation);
+        } else {
+          navigation.replace('Home');
+        }
+      }, 500);
     } catch {
       setSaveError('Could not save your profile. Please try again.');
-    } finally {
       setSaving(false);
     }
   };
@@ -54,7 +58,7 @@ const ProfileScreen = ({ navigation, route }) => {
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.card}>
               <View style={styles.header}>
-                <Text style={styles.emoji}>🌟</Text>
+                <Text style={styles.emoji}>{saved ? '🎉' : '🌟'}</Text>
                 <Text style={styles.title}>Welcome to BalaKatha!</Text>
                 <Text style={styles.subtitle}>Let's personalize your magical adventure.</Text>
               </View>
@@ -63,42 +67,49 @@ const ProfileScreen = ({ navigation, route }) => {
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Kid's Name</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, saving && { opacity: 0.6 }]}
                     value={kidName}
-                    onChangeText={(t) => { setKidName(t); setValidationError(''); }}
+                    onChangeText={(t) => { setKidName(t); setValidationError(''); setSaveError(''); }}
                     placeholder="e.g., Aarna"
                     placeholderTextColor="#a8a29e"
                     maxLength={30}
                     returnKeyType="next"
+                    editable={!saving}
                   />
                 </View>
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Father's Name</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, saving && { opacity: 0.6 }]}
                     value={fatherName}
-                    onChangeText={(t) => { setFatherName(t); setValidationError(''); }}
+                    onChangeText={(t) => { setFatherName(t); setValidationError(''); setSaveError(''); }}
                     placeholder="e.g., Ram"
                     placeholderTextColor="#a8a29e"
                     maxLength={30}
                     returnKeyType="next"
+                    editable={!saving}
                   />
                 </View>
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Mother's Name</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, saving && { opacity: 0.6 }]}
                     value={motherName}
-                    onChangeText={(t) => { setMotherName(t); setValidationError(''); }}
+                    onChangeText={(t) => { setMotherName(t); setValidationError(''); setSaveError(''); }}
                     placeholder="e.g., Lahari"
                     placeholderTextColor="#a8a29e"
                     maxLength={30}
                     returnKeyType="done"
                     onSubmitEditing={handleSubmit}
+                    editable={!saving}
                   />
                 </View>
+
+                {saved ? (
+                  <SuccessBanner message="Profile Created! Launching Journey... ✨" />
+                ) : null}
 
                 {validationError ? (
                   <Text style={styles.errorText}>{validationError}</Text>
@@ -111,7 +122,7 @@ const ProfileScreen = ({ navigation, route }) => {
                 {saving ? (
                   <View style={styles.savingContainer}>
                     <ActivityIndicator color="#9333ea" />
-                    <Text style={styles.savingText}>Saving...</Text>
+                    <Text style={styles.savingText}>Saving profile...</Text>
                   </View>
                 ) : (
                   <Button

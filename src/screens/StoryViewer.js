@@ -8,6 +8,7 @@ import { personalizeText, splitIntoSentences } from '../utils/text';
 import { Button } from '../components/ui/Button';
 import { useStory } from '../hooks/useStory';
 import { useProfileStore } from '../store/profileStore';
+import { LoadingState, ErrorState } from '../components/ui/StateViews';
 
 const MOOD_PROFILES = {
   calm:     { rate: 0.42, pitch: 0.95, pauseAfterMs: 400 },
@@ -201,10 +202,8 @@ const StoryViewer = ({ route, navigation }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles.flex1}>
-        <LinearGradient colors={['#dbeafe', '#f3e8ff']} style={styles.centerContainer}>
-          <Text style={styles.loadingEmoji}>📖</Text>
-          <ActivityIndicator size="large" color="#2563eb" style={{ marginBottom: 16 }} />
-          <Text style={styles.loadingTitle}>Loading Story...</Text>
+        <LinearGradient colors={isDark ? ['#1e1b4b', '#120b24'] : ['#dbeafe', '#f3e8ff']} style={styles.flex1}>
+          <LoadingState message="Loading Story..." isDark={isDark} />
         </LinearGradient>
       </SafeAreaView>
     );
@@ -213,12 +212,14 @@ const StoryViewer = ({ route, navigation }) => {
   if (error || !story?.slides) {
     return (
       <SafeAreaView style={styles.flex1}>
-        <LinearGradient colors={['#fee2e2', '#fce7f3']} style={styles.centerContainer}>
-          <Text style={styles.errorEmoji}>😔</Text>
-          <Text style={styles.errorTitle}>Story Not Found</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.goBackButton}>
-            <Text style={styles.goBackText}>Go Back</Text>
-          </TouchableOpacity>
+        <LinearGradient colors={isDark ? ['#3b0764', '#120b24'] : ['#fee2e2', '#fce7f3']} style={styles.flex1}>
+          <ErrorState
+            title="Story Not Found"
+            message={typeof error === 'string' ? error : "Couldn't find the requested story."}
+            onRetry={() => navigation.goBack()}
+            retryLabel="Go Back"
+            isDark={isDark}
+          />
         </LinearGradient>
       </SafeAreaView>
     );

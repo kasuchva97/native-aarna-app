@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { useProfileStore } from '../store/profileStore';
+import { EmptyState, ErrorState } from '../components/ui/StateViews';
 
 const { width, height } = Dimensions.get('window');
 
@@ -64,6 +65,8 @@ const QuizScreen = ({ route, navigation }) => {
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [quizDone, setQuizDone] = useState(false);
+  const [savingScore, setSavingScore] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   // Animations for correct/incorrect feedback
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -102,9 +105,17 @@ const QuizScreen = ({ route, navigation }) => {
       setSelectedIdx(null);
       setIsAnswered(false);
     } else {
-      setQuizDone(true);
-      // Save the quiz score to Zustand & local storage
-      await saveQuizScore(storyId, score, score === quizQuestions.length ? badgeToUnlock : undefined);
+      setSavingScore(true);
+      setSaveError('');
+      try {
+        await saveQuizScore(storyId, score, score === quizQuestions.length ? badgeToUnlock : undefined);
+        setQuizDone(true);
+      } catch (e) {
+        setSaveError('Failed to save score. Please try again.');
+        setQuizDone(true);
+      } finally {
+        setSavingScore(false);
+      }
     }
   };
 
@@ -124,6 +135,31 @@ const QuizScreen = ({ route, navigation }) => {
     }
     return [styles.optionCard, styles.optionDisabled, isDark && styles.darkOptionCardDisabled];
   };
+
+  if (!quizQuestions || quizQuestions.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, isDark && styles.darkContainer]}>
+        <LinearGradient colors={isDark ? ['#1e1b4b', '#120b24'] : ['#faf5ff', '#f3e8ff']} style={styles.flex1}>
+          <View style={styles.header}>
+            <Text style={[styles.headerTitle, isDark && styles.darkText]} numberOfLines={1}>
+              {storyTitle || 'Quiz'}
+            </Text>
+          </View>
+          <EmptyState
+            title="No Questions Available"
+            message="This quiz doesn't have any questions yet."
+            isDark={isDark}
+          />
+          <TouchableOpacity
+            style={[styles.nextButton, { marginHorizontal: 24, marginBottom: 24 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.nextButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, isDark && styles.darkContainer]}>
@@ -168,7 +204,7 @@ const QuizScreen = ({ route, navigation }) => {
                   key={idx}
                   activeOpacity={0.8}
                   onPress={() => handleSelectOption(idx)}
-                  disabled={isAnswered}
+                  disabled={isAnswered || savingScore}
                   style={getOptionStyle(idx)}
                 >
                   <Text style={[
@@ -185,10 +221,14 @@ const QuizScreen = ({ route, navigation }) => {
 
             {/* Action Button */}
             {isAnswered && (
-              <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                <Text style={styles.nextButtonText}>
-                  {currentIndex === quizQuestions.length - 1 ? 'Finish Quiz 🎉' : 'Next Question →'}
-                </Text>
+              <TouchableOpacity style={styles.nextButton} onPress={handleNext} disabled={savingScore}>
+                {savingScore ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.nextButtonText}>
+                    {currentIndex === quizQuestions.length - 1 ? 'Finish Quiz 🎉' : 'Next Question →'}
+                  </Text>
+                )}
               </TouchableOpacity>
             )}
           </View>

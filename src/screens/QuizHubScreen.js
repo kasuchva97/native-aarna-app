@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useProfileStore } from '../store/profileStore';
 import { useAllStories } from '../hooks/useAllStories';
@@ -35,7 +35,10 @@ const QuizHubScreen = ({ navigation }) => {
   };
 
   const handleStartQuiz = (story) => {
-    if (!story.quiz || story.quiz.length === 0) return;
+    if (!story.quiz || story.quiz.length === 0) {
+      Alert.alert('Quiz Coming Soon 📝', 'Quiz questions for this story are currently being prepared!');
+      return;
+    }
     
     // Dynamically map a badge to unlock for this story category
     let badgeToUnlock = 'Adventure Master';
@@ -121,13 +124,13 @@ const QuizHubScreen = ({ navigation }) => {
               style={[
                 styles.quizCard,
                 isDark && styles.darkQuizCard,
-                !isCompleted && styles.quizCardLocked
+                !isCompleted && (isDark ? styles.darkQuizCardLocked : styles.quizCardLocked)
               ]}
             >
               <View style={styles.cardHeader}>
                 <View style={styles.titleArea}>
                   <Text style={[styles.storyTitle, isDark && styles.darkText]}>{story.title}</Text>
-                  <Text style={styles.storyDesc} numberOfLines={1}>{story.description}</Text>
+                  <Text style={[styles.storyDesc, isDark && styles.darkStoryDesc]} numberOfLines={1}>{story.description}</Text>
                 </View>
                 {isCompleted ? (
                   <View style={styles.starsIndicator}>
@@ -138,7 +141,7 @@ const QuizHubScreen = ({ navigation }) => {
                     ))}
                   </View>
                 ) : (
-                  <Text style={styles.lockText}>🔒 Locked</Text>
+                  <Text style={[styles.lockText, isDark && styles.darkLockText]}>🔒 Locked</Text>
                 )}
               </View>
 
@@ -153,7 +156,7 @@ const QuizHubScreen = ({ navigation }) => {
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text style={styles.unlockHint}>Read this story in full to unlock the quiz!</Text>
+                  <Text style={[styles.unlockHint, isDark && styles.darkUnlockHint]}>Read this story in full to unlock the quiz!</Text>
                 )}
               </View>
             </Card>
@@ -319,6 +322,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     opacity: 0.8,
   },
+  darkQuizCardLocked: {
+    backgroundColor: '#160e29',
+    borderColor: 'rgba(147, 51, 234, 0.15)',
+    opacity: 0.8,
+  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -339,6 +347,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9333ea',
   },
+  darkStoryDesc: {
+    color: '#c084fc',
+  },
   starsIndicator: {
     flexDirection: 'row',
   },
@@ -355,6 +366,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+  },
+  darkLockText: {
+    backgroundColor: '#2e1854',
+    color: '#d8b4fe',
   },
   cardActionRow: {
     marginTop: 8,
@@ -375,6 +390,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     fontStyle: 'italic',
+  },
+  darkUnlockHint: {
+    color: '#a855f7',
   },
   emptyContainer: {
     alignItems: 'center',

@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FastImage from '@d11/react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import Card from '../components/ui/Card';
 import { useGods } from '../hooks/useGods';
+import { LoadingState, ErrorState, EmptyState } from '../components/ui/StateViews';
 
 const GridHeader = ({ title, onBack, colorClass }) => (
   <View style={styles.header}>
@@ -12,25 +13,6 @@ const GridHeader = ({ title, onBack, colorClass }) => (
       <Text style={styles.backText}>← Back</Text>
     </TouchableOpacity>
     <Text style={[styles.title, { color: colorClass || '#7e22ce' }]}>{title}</Text>
-  </View>
-);
-
-const ErrorState = ({ onRetry }) => (
-  <View style={styles.centerContainer}>
-    <Text style={styles.stateEmoji}>😔</Text>
-    <Text style={styles.stateTitle}>Couldn't load content</Text>
-    <Text style={styles.stateSubtitle}>Check your connection and try again.</Text>
-    <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-      <Text style={styles.retryText}>Try Again</Text>
-    </TouchableOpacity>
-  </View>
-);
-
-const EmptyState = () => (
-  <View style={styles.centerContainer}>
-    <Text style={styles.stateEmoji}>🚧</Text>
-    <Text style={styles.stateTitle}>Coming Soon!</Text>
-    <Text style={styles.stateSubtitle}>New stories are being added soon.</Text>
   </View>
 );
 
@@ -44,14 +26,11 @@ export const MythologyGrid = ({ navigation, route }) => {
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <GridHeader title="Choose Your God" onBack={() => navigation.goBack()} />
           {loading ? (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color="#7e22ce" />
-              <Text style={styles.loadingText}>Loading...</Text>
-            </View>
+            <LoadingState message="Loading Gods..." />
           ) : error ? (
-            <ErrorState onRetry={refetch} />
+            <ErrorState title="Couldn't load content" message="Check your connection and try again." onRetry={refetch} />
           ) : gods.length === 0 ? (
-            <EmptyState />
+            <EmptyState title="Coming Soon!" message="New stories are being added soon." />
           ) : (
             <View style={styles.grid2Col}>
               {gods.map((god) => (

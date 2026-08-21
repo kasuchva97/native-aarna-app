@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { personalizeText } from '../utils/text';
@@ -7,6 +7,7 @@ import Card from '../components/ui/Card';
 import { useStories } from '../hooks/useStories';
 import { CATEGORY_NAMES } from '../constants';
 import { useProfileStore } from '../store/profileStore';
+import { LoadingState, ErrorState, EmptyState } from '../components/ui/StateViews';
 
 const StoriesList = ({ route, navigation }) => {
   const { category, profile } = route.params || {};
@@ -61,25 +62,11 @@ const StoriesList = ({ route, navigation }) => {
         </View>
 
         {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={isDark ? '#c084fc' : '#7e22ce'} />
-            <Text style={[styles.loadingText, isDark && styles.darkTitle]}>Loading stories...</Text>
-          </View>
+          <LoadingState message="Loading stories..." isDark={isDark} />
         ) : error ? (
-          <View style={styles.centerContainer}>
-            <Text style={styles.stateEmoji}>😔</Text>
-            <Text style={[styles.stateTitle, isDark && styles.darkText]}>Couldn't load stories</Text>
-            <Text style={[styles.stateSubtitle, isDark && styles.darkTextSecondary]}>Check your connection and try again.</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={refetch}>
-              <Text style={styles.retryText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
+          <ErrorState title="Couldn't load stories" message="Check your connection and try again." onRetry={refetch} isDark={isDark} />
         ) : stories.length === 0 ? (
-          <View style={styles.centerContainer}>
-            <Text style={styles.stateEmoji}>🚧</Text>
-            <Text style={[styles.stateTitle, isDark && styles.darkText]}>Coming Soon!</Text>
-            <Text style={[styles.stateSubtitle, isDark && styles.darkTextSecondary]}>New stories are being added soon.</Text>
-          </View>
+          <EmptyState title="Coming Soon!" message="New stories are being added soon." isDark={isDark} />
         ) : (
           <FlatList
             data={stories}

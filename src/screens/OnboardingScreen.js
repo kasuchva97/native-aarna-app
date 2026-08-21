@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Animated, TouchableOpacity,
-  Dimensions, KeyboardAvoidingView, Platform, ScrollView,
+  Dimensions, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { useProfileStore } from '../store/profileStore';
+import { SuccessBanner } from '../components/ui/StateViews';
 
 const { width, height } = Dimensions.get('window');
 
@@ -178,8 +179,8 @@ const GenderOption = ({ emoji, label, selected, onSelect }) => {
 };
 
 // ─── Main screen ───────────────────────────────────────────────────────────────
-const OnboardingScreen = ({ navigation, route }) => {
-  const { onComplete } = route.params || {};
+const OnboardingScreen = ({ navigation, route, onComplete: onCompleteProp }) => {
+  const onComplete = onCompleteProp || route.params?.onComplete;
   const { setProfile } = useProfileStore();
 
   const [step, setStep] = useState(0);
@@ -190,6 +191,7 @@ const OnboardingScreen = ({ navigation, route }) => {
   const [fatherName, setFatherName] = useState('');
   const [motherName, setMotherName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [error, setError] = useState('');
 
   // Main character float
@@ -246,6 +248,7 @@ const OnboardingScreen = ({ navigation, route }) => {
   const currentStep = STEPS[step];
 
   const getCharacter = () => {
+    if (status === 'success') return '🎉';
     if (step === 0) {
       return language ? '👋' : '📖';
     }
@@ -265,24 +268,28 @@ const OnboardingScreen = ({ navigation, route }) => {
   };
 
   const canProceed = () => {
+    if (saving || status === 'loading') return false;
     if (step === 0) return true;
     if (step === 1) return purpose !== null;
     if (step === 2) return gender !== null;
-    if (step === 3) return kidName.trim() && fatherName.trim() && motherName.trim();
+    if (step === 3) return Boolean(kidName.trim() && fatherName.trim() && motherName.trim());
     return false;
   };
 
   const handleNext = async () => {
     setError('');
+    setStatus('idle');
     if (step < STEPS.length - 1) {
       setStep(s => s + 1);
       return;
     }
     if (!kidName.trim() || !fatherName.trim() || !motherName.trim()) {
-      setError('Please fill in all three names.');
+      setError('Please fill in all three names to continue.');
+      setStatus('error');
       return;
     }
     setSaving(true);
+    setStatus('loading');
     try {
       const profile = {
         kidName: kidName.trim(),
@@ -293,9 +300,17 @@ const OnboardingScreen = ({ navigation, route }) => {
         gender,
       };
       await setProfile(profile);
-      if (onComplete) onComplete(navigation);
+      setStatus('success');
+      setTimeout(() => {
+        if (typeof onComplete === 'function') {
+          onComplete(navigation);
+        } else if (navigation && typeof navigation.replace === 'function') {
+          navigation.replace('Home');
+        }
+      }, 500);
     } catch {
-      setError('Could not save. Please try again.');
+      setError('Could not save profile. Please try again.');
+      setStatus('error');
       setSaving(false);
     }
   };
@@ -308,8 +323,12 @@ const OnboardingScreen = ({ navigation, route }) => {
           {/* Top bar */}
           <View style={styles.topBar}>
             {step > 0 ? (
-              <TouchableOpacity style={styles.backBtn} onPress={() => setStep(s => s - 1)}>
-                <Text style={styles.backIcon}>←</Text>
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => setStep(s => s - 1)}
+                disabled={saving || status === 'loading'}
+              >
+                <Text style={[styles.backIcon, (saving || status === 'loading') && { opacity: 0.4 }]}>←</Text>
               </TouchableOpacity>
             ) : <View style={styles.backBtn} />}
             <View style={styles.progressBarTrack}>
@@ -418,16 +437,20 @@ const OnboardingScreen = ({ navigation, route }) => {
                     <View key={label} style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>{label}</Text>
                       <TextInput
-                        style={styles.input}
+                        style={[styles.input, saving && { opacity: 0.6 }]}
                         value={value}
-                        onChangeText={t => { setter(t); setError(''); }}
+                        onChangeText={t => { setter(t); setError(''); setStatus('idle'); }}
                         placeholder={placeholder}
                         placeholderTextColor="#a8a29e"
                         maxLength={30}
                         returnKeyType="next"
+                        editable={!saving}
                       />
                     </View>
                   ))}
+                  {status === 'success' ? (
+                    <SuccessBanner message="Profile Saved! Launching Home... 🎉" />
+                  ) : null}
                   {error ? <Text style={styles.errorText}>{error}</Text> : null}
                 </View>
               )}
@@ -443,11 +466,14 @@ const OnboardingScreen = ({ navigation, route }) => {
                   colors={canProceed() ? ['#ec4899', '#9333ea'] : ['#e5e7eb', '#e5e7eb']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.nextBtn}
+                  style={[styles.nextBtn, { flexDirection: 'row', justifyContent: 'center', gap: 10 }]}
                 >
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : null}
                   <Text style={[styles.nextBtnText, !canProceed() && styles.nextBtnTextDisabled]}>
                     {step === STEPS.length - 1
-                      ? (saving ? 'Starting…' : 'Start Reading! 📖')
+                      ? (saving ? 'Starting...' : 'Start Reading! 📖')
                       : 'Continue →'}
                   </Text>
                 </LinearGradient>

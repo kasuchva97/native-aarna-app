@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { useProfileStore } from '../store/profileStore';
 import { Button } from '../components/ui/Button';
+import { SuccessBanner } from '../components/ui/StateViews';
 
 const SettingsScreen = ({ navigation }) => {
   const { profile, updateProfile, theme } = useProfileStore();
@@ -47,7 +48,7 @@ const SettingsScreen = ({ navigation }) => {
         language,
       });
       setSaved(true);
-      setTimeout(() => navigation.goBack(), 800);
+      setTimeout(() => navigation.goBack(), 700);
     } catch {
       setError('Could not save. Please try again.');
     } finally {
@@ -58,7 +59,7 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, isDark && styles.darkContainer]}>
       <LinearGradient colors={isDark ? ['#3b0764', '#1c1133'] : ['#7e22ce', '#9333ea']} style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} disabled={saving}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Settings</Text>
@@ -78,33 +79,35 @@ const SettingsScreen = ({ navigation }) => {
             <View style={styles.inputGroup}>
               <Text style={[styles.label, isDark && styles.darkLabel]}>Kid's Name</Text>
               <TextInput
-                style={[styles.input, isDark && styles.darkInput]}
+                style={[styles.input, isDark && styles.darkInput, saving && { opacity: 0.6 }]}
                 value={kidName}
                 onChangeText={(t) => { setKidName(t); setError(''); setSaved(false); }}
                 placeholder="e.g., Aarna"
                 placeholderTextColor={isDark ? '#94a3b8' : '#a8a29e'}
                 maxLength={30}
                 returnKeyType="next"
+                editable={!saving}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, isDark && styles.darkLabel]}>Father's Name</Text>
               <TextInput
-                style={[styles.input, isDark && styles.darkInput]}
+                style={[styles.input, isDark && styles.darkInput, saving && { opacity: 0.6 }]}
                 value={fatherName}
                 onChangeText={(t) => { setFatherName(t); setError(''); setSaved(false); }}
                 placeholder="e.g., Ram"
                 placeholderTextColor={isDark ? '#94a3b8' : '#a8a29e'}
                 maxLength={30}
                 returnKeyType="next"
+                editable={!saving}
               />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, isDark && styles.darkLabel]}>Mother's Name</Text>
               <TextInput
-                style={[styles.input, isDark && styles.darkInput]}
+                style={[styles.input, isDark && styles.darkInput, saving && { opacity: 0.6 }]}
                 value={motherName}
                 onChangeText={(t) => { setMotherName(t); setError(''); setSaved(false); }}
                 placeholder="e.g., Lahari"
@@ -112,6 +115,7 @@ const SettingsScreen = ({ navigation }) => {
                 maxLength={30}
                 returnKeyType="done"
                 onSubmitEditing={handleSave}
+                editable={!saving}
               />
             </View>
 
@@ -126,6 +130,7 @@ const SettingsScreen = ({ navigation }) => {
                     isDark && language === 'en' && styles.darkSelectorOptSelected
                   ]}
                   onPress={() => { setLanguage('en'); setSaved(false); }}
+                  disabled={saving}
                 >
                   <Text style={styles.langOptEmoji}>🇮🇳</Text>
                   <Text style={[
@@ -143,6 +148,7 @@ const SettingsScreen = ({ navigation }) => {
                     isDark && language === 'te' && styles.darkSelectorOptSelected
                   ]}
                   onPress={() => { setLanguage('te'); setSaved(false); }}
+                  disabled={saving}
                 >
                   <Text style={styles.langOptEmoji}>🌺</Text>
                   <Text style={[
@@ -158,15 +164,13 @@ const SettingsScreen = ({ navigation }) => {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             {saved ? (
-              <View style={styles.savedBanner}>
-                <Text style={styles.savedText}>✓ Settings saved successfully!</Text>
-              </View>
+              <SuccessBanner message="Settings saved successfully!" isDark={isDark} />
             ) : null}
 
             {saving ? (
               <View style={styles.savingRow}>
-                <ActivityIndicator color="#9333ea" />
-                <Text style={styles.savingText}>Saving...</Text>
+                <ActivityIndicator color={isDark ? '#c084fc' : '#9333ea'} />
+                <Text style={[styles.savingText, isDark && styles.darkTextSecondary]}>Saving...</Text>
               </View>
             ) : (
               <Button
