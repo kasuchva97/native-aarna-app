@@ -179,9 +179,18 @@ const ProfileSettingsScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Account Settings / Reset Card */}
+      {/* Privacy Policy & System Controls Card */}
       <View style={[styles.card, isDark && styles.darkCard]}>
-        <Text style={[styles.cardTitle, isDark && styles.darkText]}>System Controls</Text>
+        <Text style={[styles.cardTitle, isDark && styles.darkText]}>Privacy & Controls</Text>
+        
+        <TouchableOpacity
+          style={[styles.policyButton, isDark && styles.darkPolicyButton]}
+          onPress={() => navigation.navigate('PrivacyPolicy')}
+        >
+          <Text style={[styles.policyButtonText, isDark && styles.darkText]}>🔒 Privacy Policy</Text>
+          <Text style={styles.policyArrow}>→</Text>
+        </TouchableOpacity>
+
         <Text style={styles.resetSubText}>
           Clearing profile wipes local caches and resets the onboarding setup.
         </Text>
@@ -382,6 +391,31 @@ const styles = StyleSheet.create({
   },
   genderButtonTextActive: {
     color: '#9333ea',
+  },
+  policyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#e9d5ff',
+    backgroundColor: '#faf5ff',
+    marginBottom: 16,
+  },
+  darkPolicyButton: {
+    backgroundColor: '#160e29',
+    borderColor: 'rgba(147, 51, 234, 0.2)',
+  },
+  policyButtonText: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#7e22ce',
+  },
+  policyArrow: {
+    fontSize: 18,
+    color: '#9333ea',
+    fontWeight: 'bold',
   },
   resetSubText: {
     fontSize: 13,

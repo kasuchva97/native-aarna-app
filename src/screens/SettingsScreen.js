@@ -180,6 +180,14 @@ const SettingsScreen = ({ navigation }) => {
                 Save Changes
               </Button>
             )}
+
+            <TouchableOpacity
+              style={[styles.policyButton, isDark && styles.darkPolicyButton]}
+              onPress={() => navigation.navigate('PrivacyPolicy')}
+            >
+              <Text style={[styles.policyText, isDark && styles.darkText]}>🔒 Privacy Policy</Text>
+              <Text style={styles.policyArrow}>→</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -292,6 +300,31 @@ const styles = StyleSheet.create({
   savedText: { color: '#16a34a', fontWeight: '600', fontSize: 15 },
   savingRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 16 },
   savingText: { marginLeft: 10, color: '#9333ea', fontSize: 16, fontWeight: '600' },
+  policyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#e9d5ff',
+    backgroundColor: '#fff',
+    marginTop: 14,
+  },
+  darkPolicyButton: {
+    backgroundColor: '#160e29',
+    borderColor: 'rgba(147, 51, 234, 0.2)',
+  },
+  policyText: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#7e22ce',
+  },
+  policyArrow: {
+    fontSize: 18,
+    color: '#9333ea',
+    fontWeight: 'bold',
+  },
   versionBottomContainer: {
     position: 'absolute',
     bottom: 16,

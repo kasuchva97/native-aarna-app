@@ -14,6 +14,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import DebugScreen from '../screens/DebugScreen';
 import MainShell from '../screens/MainShell';
 import QuizScreen from '../screens/QuizScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
 const Stack = createStackNavigator();
 
@@ -52,6 +53,7 @@ const AppNavigator = ({ profile, onSplashComplete, onProfileComplete }) => {
       <Stack.Screen name="PoemViewer" component={PoemViewer} />
       <Stack.Screen name="GameViewer" component={GameViewer} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       {__DEV__ && <Stack.Screen name="Debug" component={DebugScreen} />}
     </Stack.Navigator>
   );
