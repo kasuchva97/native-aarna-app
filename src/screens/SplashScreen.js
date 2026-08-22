@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Image, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Tts from 'react-native-tts';
 
 const { width } = Dimensions.get('window');
 
@@ -32,20 +31,6 @@ const SplashScreen = ({ navigation, onComplete }) => {
 
   useEffect(() => {
     let isMounted = true;
-
-    // --- Sound Effect via TTS ---
-    const triggerAudioEffect = async () => {
-      try {
-        await Tts.getInitStatus();
-        await Tts.setDefaultRate(0.52);
-        await Tts.setDefaultPitch(1.25);
-        if (isMounted) {
-          Tts.speak('Welcome to BalaKatha');
-        }
-      } catch (e) {
-        console.log('SplashScreen sound note:', e);
-      }
-    };
 
     // --- Step 1: Converging Rings & Logo Formation ---
     Animated.parallel([
@@ -103,9 +88,6 @@ const SplashScreen = ({ navigation, onComplete }) => {
           useNativeDriver: true,
         }).start();
       });
-
-      // Play welcome audio chime/speech right as logo locks into place
-      triggerAudioEffect();
     }, 600);
 
     // --- Step 3: Letter-by-Letter Title Reveal ---
@@ -203,9 +185,6 @@ const SplashScreen = ({ navigation, onComplete }) => {
       d1.stop();
       d2.stop();
       d3.stop();
-      try {
-        Tts.stop();
-      } catch (err) {}
     };
   }, [onComplete, navigation, ringRotate1, ringRotate2, ringScale, logoScale, logoOpacity, flashOpacity, orbScale, taglineOpacity, taglineScale, floatAnim, dot1, dot2, dot3, letterAnims]);
 
